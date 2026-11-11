@@ -11,9 +11,14 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SKILL_FILES = (
+    "SKILL.md",
+    "references/workbuddy.md",
+    "assets/workbuddy-mcp.json",
+)
 SOURCES = (
     "release.json",
-    "skills/oprun-project-planning/SKILL.md",
+    *(f"skills/oprun-project-planning/{path}" for path in SKILL_FILES),
     "INSTALL.md",
     "mcp.json",
     "tools/package.py",
@@ -42,15 +47,24 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=False)
     bundle = args.output_dir / "oprun-project-planning.zip"
     with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        info = zipfile.ZipInfo(
-            "oprun-project-planning/SKILL.md", date_time=(1980, 1, 1, 0, 0, 0)
-        )
-        info.external_attr = 0o100644 << 16
-        info.compress_type = zipfile.ZIP_DEFLATED
-        archive.writestr(info, contents["skills/oprun-project-planning/SKILL.md"])
+        for path in SKILL_FILES:
+            info = zipfile.ZipInfo(
+                f"oprun-project-planning/{path}", date_time=(1980, 1, 1, 0, 0, 0)
+            )
+            info.external_attr = 0o100644 << 16
+            info.compress_type = zipfile.ZIP_DEFLATED
+            archive.writestr(info, contents[f"skills/oprun-project-planning/{path}"])
 
     for name in ("INSTALL.md", "mcp.json"):
-        (args.output_dir / name).write_bytes(contents[name])
+        data = contents[name]
+        if name == "INSTALL.md":
+            # The standalone release guide has no repository-relative skills/.
+            prefix = f"](https://github.com/{release['repository']}/blob/{revision}/skills/"
+            data = data.decode().replace("](skills/", prefix).encode()
+        (args.output_dir / name).write_bytes(data)
+    (args.output_dir / "workbuddy-mcp.json").write_bytes(
+        contents["skills/oprun-project-planning/assets/workbuddy-mcp.json"]
+    )
     hashes = {
         path.name: hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(args.output_dir.iterdir())

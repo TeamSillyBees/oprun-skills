@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "oprun": {
+      "type": "streamableHttp",
+      "url": "https://www.agi.yifx.vip/mcp"
+    }
+  }
+}

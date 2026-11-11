@@ -1,4 +1,6 @@
 dist/
+tmp/
+__pycache__/
 work/
 __pycache__/
 *.pyc

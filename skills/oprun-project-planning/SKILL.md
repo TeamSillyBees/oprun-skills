@@ -1,11 +1,23 @@
 ---
 name: oprun-project-planning
-description: Use OpRun to discover accessible projects and read their plans, propose a deliverable and acceptance criteria for one work step, or ask Xiaojun to generate and revise a project graph and quote.
+description: Connect or reconnect OpRun in WorkBuddy or another remote MCP host, discover accessible projects and read their plans, propose deliverables, or ask Xiaojun to generate and revise a project graph and quote.
 ---
 
 # OpRun 项目方案
 
-通过宿主的远程 MCP 连接使用 OpRun。连接地址为用户所在 OpRun 站点的 `/mcp`；让用户在该站点授权所需功能。使用 `tools/list` 获取本次可用工具。凭据由宿主保存。新连接按账号授权，涵盖账号各身份已有的项目权限，无需用户填写项目编号。
+通过宿主的远程 MCP 连接使用 OpRun。默认地址为 `https://www.agi.yifx.vip/mcp`；用户明确提供其他 OpRun 站点时使用该站点的 `/mcp`。连接按账号授权，涵盖账号各身份已有的项目权限，无需填写项目编号。
+
+## 连接、登录与恢复
+
+用户要求“连接 OpRun”“登录”或“列出项目”时，先确定 MCP 是否可用。安装此 Skill 只提供操作指引，不会自动创建宿主的 MCP 连接。
+
+1. 检查宿主已加载的 OpRun 工具或原生 MCP 配置。已有同站点连接则复用；同名连接指向其他站点时说明冲突，不覆盖。
+2. 缺少连接时，使用当前宿主支持的配置工具添加名为 `oprun` 的远程 Streamable HTTP MCP，并启动宿主原生 OAuth。WorkBuddy 的配置和具体操作见随包提供的 [WorkBuddy 接入指引](references/workbuddy.md) 与 [连接配置](assets/workbuddy-mcp.json)。不要在 WorkBuddy 中运行 Codex 专用命令。
+3. 宿主没有配置工具时，向用户提供上述地址和可导入的配置，明确当前为“已安装 Skill，待添加连接器”，引导其添加并点击“连接”。不要仅让用户重复说“连接”或重装 Skill。
+4. 由用户在宿主打开的页面登录并确认范围。标准范围为 `plan:read`、`plan:propose`、`plan:generate`；用户只要求只读授权时，使用宿主支持的范围设置仅申请 `plan:read`，不默认扩大权限。若宿主不能指定范围，先说明限制。没有弹窗时，检查是否已创建连接及其状态；只有宿主已生成授权链接时才展示该链接，不能猜测授权地址。
+5. 通过 MCP `tools/list` 确认可用工具，再调用 `oprun_account_context` 和 `oprun_list_projects` 做只读验收。空列表也可证明读取成功；配置存在或 Skill 已加载不能证明授权成功。按实际进度报告“待添加连接器”“等待授权”“已连接”或“项目列表已验证”。
+
+凭据交给宿主保存，不索取密码、Token 或 Cookie，不将授权链接写入文件和日志，不自行实现另一个 OAuth 客户端。连接支持续期时由宿主刷新；返回 `invalid_grant` 时重新授权，返回 `invalid_client` 时使用宿主的重建注册功能；没有该功能则仅重新添加 OpRun 连接，不清除其他连接。安装和连接验收不生成方案、不保存草稿、不消耗模型额度。
 
 ## 发现项目与权限
 
