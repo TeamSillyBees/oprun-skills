@@ -1,16 +1,14 @@
 # OpRun Skills
 
-WorkBuddy 从 GitHub 安装 Skill 后，还需要添加 MCP 连接器并授权。当前 Skill 已包含 [WorkBuddy 接入指引](skills/oprun-project-planning/references/workbuddy.md) 和 [可导入的连接配置](skills/oprun-project-planning/assets/workbuddy-mcp.json)；在对话中要求“连接 OpRun”时，先检查连接器是否存在，再启动登录。
-
-让 Agent 连接 OpRun，发现账号已有权限下的项目、读取方案、提出工序修改，或按需求生成方案。
-
 ## 一句话接入
 
 把这句话发给你的 Agent：
 
-> 请按照 https://raw.githubusercontent.com/TeamSillyBees/oprun-skills/main/INSTALL.md 安装 OpRun Skill 并配置 MCP 连接，引导我完成登录授权，然后列出我的项目。
+> 请按 https://raw.githubusercontent.com/TeamSillyBees/oprun-skills/main/INSTALL.md 接入 OpRun，带我完成登录。
 
 Agent 需要支持安装 Skill 和远程 HTTP MCP OAuth。首次登录由你完成，无需填写项目编号。不同宿主可能需要打开 MCP 设置或重新加载会话；具体步骤见 [Agent 安装指南](INSTALL.md)。
+
+WorkBuddy 安装 Skill 后还需添加 MCP 连接器并授权，具体见随包的 [接入指引](skills/oprun-project-planning/references/workbuddy.md) 和 [连接配置](skills/oprun-project-planning/assets/workbuddy-mcp.json)。已安装 Skill 时，直接说“连接 OpRun，带我完成登录”。
 
 ## 手动安装
 
@@ -23,6 +21,8 @@ gh skill install TeamSillyBees/oprun-skills oprun-project-planning@main --agent 
 这一步安装当前源码中的 Skill；继续按 [安装指南](INSTALL.md) 配置 MCP 并登录。其他宿主选择其支持的安装方式。需要固定版本时选用 [Releases](https://github.com/TeamSillyBees/oprun-skills/releases) 中已发布的标签，或核实过的完整提交。v1.0.1 包含完整 WorkBuddy 接入资源；旧 v1.0.0 包只含 Skill 正文。
 
 ## 连接后能做什么
+
+登录并验证连接后，Agent 会在回复末尾按你的实际权限给出操作引导。选择后再执行，例如：
 
 - “列出我的项目，再读取库存项目的当前版本和工序。”
 - “为研发工序补充库存查询网页的交付物和验收条件，先给我确认。”
