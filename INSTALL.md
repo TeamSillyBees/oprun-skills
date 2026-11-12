@@ -1,8 +1,10 @@
 # 给 Agent 的 OpRun 安装指南
 
-用户要求接入 OpRun 时，按本指南安装并验证。当前源码版本为 **v1.0.1**，是否已有发布包以 [GitHub Releases](https://github.com/TeamSillyBees/oprun-skills/releases) 为准。Skill 为 `oprun-project-planning`，服务地址为 `https://www.agi.yifx.vip/mcp`。用户明确提供其他 OpRun 站点时，使用该站点的 `/mcp`。
+用户要求接入 OpRun 时，按本指南安装并验证。当前源码版本为 **v1.0.2**，是否已有发布包以 [GitHub Releases](https://github.com/TeamSillyBees/oprun-skills/releases) 为准。Skill 为 `oprun-project-planning`，服务地址为 `https://www.agi.yifx.vip/mcp`。用户明确提供其他 OpRun 站点时，使用该站点的 `/mcp`。
 
 **WorkBuddy：安装 Skill 不会自动创建 MCP 连接器。** 从 GitHub 安装后要求“连接 OpRun”，应继续执行 [Skill 随包的 WorkBuddy 接入指引](skills/oprun-project-planning/references/workbuddy.md)，添加连接并启动 OAuth；不要把“Skill 已安装”报告为“已连接”。
+
+**服务端能力核对：** Skill 可先安装，连接仍以目标站点当前能力为准。先读[多宿主接入指引](skills/oprun-project-planning/references/hosts.md)；没有 `profiles` 时保留宿主原生配置，没有 CIMD 能力声明时保留 DCR。原生回调和受管公共客户端需服务端部署对应修复，不能通过更新 Skill 或手填客户端 ID 启用。
 
 ## 1. 检查宿主和现有连接
 
@@ -20,7 +22,7 @@ gh skill install TeamSillyBees/oprun-skills oprun-project-planning@main --agent 
 
 `main` 安装当前源码；需要固定版本时，将它替换为 Releases 中实际存在的标签或核实过的完整提交。其他宿主先从本机帮助确认 `--agent` 值。不要加 `--force` 覆盖已有内容。安装完成后检查宿主能发现 `oprun-project-planning`。[GitHub CLI 安装说明](https://cli.github.com/manual/gh_skill_install)
 
-无此命令时，从已发布的 Release 下载 `oprun-project-planning.zip`、`manifest.json` 和 `SHA256SUMS`，验证 ZIP 的 SHA-256 与两份清单一致。v1.0.1 的 ZIP 应包含且仅包含 `oprun-project-planning/SKILL.md`、`oprun-project-planning/references/workbuddy.md` 和 `oprun-project-planning/assets/workbuddy-mcp.json`；检查成员路径后完整解压到宿主支持的 Skill 目录。若 v1.0.1 尚未发布，从核实过的仓库提交安装完整 Skill 目录。旧 v1.0.0 包只含 Skill 正文，缺少此次接入指引，不能视作已升级。
+无此命令时，从已发布的 Release 下载 `oprun-project-planning.zip`、`manifest.json` 和 `SHA256SUMS`，验证 ZIP 的 SHA-256 与两份清单一致。v1.0.2 的 ZIP 应包含且仅包含 `oprun-project-planning/SKILL.md`、`oprun-project-planning/references/workbuddy.md`、`oprun-project-planning/references/hosts.md` 和 `oprun-project-planning/assets/workbuddy-mcp.json`；检查成员路径后完整解压到宿主支持的 Skill 目录。若 v1.0.2 尚未发布，从核实过的仓库提交安装完整 Skill 目录。旧 v1.0.1 包含 WorkBuddy 指引但没有多宿主说明；v1.0.0 只含 Skill 正文。旧包不会启用新增的服务端能力。
 
 Codex 项目目录为 `.agents/skills/`。保持目录结构为 `.agents/skills/oprun-project-planning/SKILL.md`。若已存在则先比较，不混合覆盖；完全相同可直接复用。若宿主尚未发现 Skill，按其要求重新加载或打开新会话。[Codex Skill 说明](https://developers.openai.com/codex/skills/)
 

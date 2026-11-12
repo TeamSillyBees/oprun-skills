@@ -51,6 +51,7 @@ class SkillPackageTest(unittest.TestCase):
             self.assertEqual(names, {
                 "oprun-project-planning/SKILL.md",
                 "oprun-project-planning/references/workbuddy.md",
+                "oprun-project-planning/references/hosts.md",
                 "oprun-project-planning/assets/workbuddy-mcp.json",
             })
             for name in names:

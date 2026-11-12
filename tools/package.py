@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILL_FILES = (
     "SKILL.md",
     "references/workbuddy.md",
+    "references/hosts.md",
     "assets/workbuddy-mcp.json",
 )
 SOURCES = (

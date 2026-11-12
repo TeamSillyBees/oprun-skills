@@ -10,6 +10,8 @@ Agent 需要支持安装 Skill 和远程 HTTP MCP OAuth。首次登录由你完�
 
 WorkBuddy 安装 Skill 后还需添加 MCP 连接器并授权，具体见随包的 [接入指引](skills/oprun-project-planning/references/workbuddy.md) 和 [连接配置](skills/oprun-project-planning/assets/workbuddy-mcp.json)。已安装 Skill 时，直接说“连接 OpRun，带我完成登录”。
 
+多宿主配置与新旧服务端兼容方式见[多宿主接入指引](skills/oprun-project-planning/references/hosts.md)。Skill 可以先更新；WorkBuddy 原生回调、受管公共客户端和 CIMD 仍取决于目标服务端是否支持并启用。
+
 ## 手动安装
 
 支持 `gh skill install` 的 GitHub CLI 可在目标项目目录执行：
@@ -34,10 +36,10 @@ gh skill install TeamSillyBees/oprun-skills oprun-project-planning@main --agent 
 
 ## 维护发布
 
-本仓库分发 Skill、安装说明和公开连接配置。`release.json` 记录版本及对应的 OpRun 源码版本。提交变更后运行：
+本仓库分发 Skill、安装说明和公开连接配置。`release.json` 记录版本及文档参考的 OpRun 源码版本，不代表生产已发布。提交变更后运行：
 
 ```sh
-python3 tools/package.py --output-dir dist/v1.0.1
+python3 tools/package.py --output-dir dist/v1.0.2
 ```
 
-输出可复现的 ZIP、安装指南、通用及 WorkBuddy MCP 配置、`manifest.json` 与 `SHA256SUMS`。ZIP 包含 Skill 正文、WorkBuddy 接入指引和配置。清单记录本仓库提交、OpRun 兼容基线和各文件校验值；`oprun_revision` 不代表线上当前版本。为新版本使用新的输出目录和版本标签，发布前运行 `python3 -m unittest discover -s tests`。源码更新与 Release 发布分开执行，不覆盖旧资产。
+输出可复现的 ZIP、安装指南、通用及 WorkBuddy MCP 配置、`manifest.json` 与 `SHA256SUMS`。v1.0.2 ZIP 包含 Skill 正文、多宿主及 WorkBuddy 接入指引和配置。清单记录本仓库提交、OpRun 源码参考和各文件校验值；`oprun_revision` 不代表线上当前版本。为新版本使用新的输出目录和版本标签，发布前运行 `python3 -m unittest discover -s tests`。源码更新与 Release 发布分开执行，不覆盖旧资产。

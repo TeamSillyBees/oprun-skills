@@ -7,6 +7,8 @@ description: Connect or reconnect OpRun in WorkBuddy or another remote MCP host,
 
 通过宿主的远程 MCP 连接使用 OpRun。默认地址为 `https://www.agi.yifx.vip/mcp`；用户明确提供其他 OpRun 站点时使用该站点的 `/mcp`。连接按账号授权，涵盖账号各身份已有的项目权限，无需填写项目编号。
 
+先按[多宿主接入指引](references/hosts.md)核对目标站点已启用的能力，再选择宿主配置格式；Skill 更新不代表服务端已经升级。不要把 WorkBuddy 的配置字段直接套用到 VS Code、Codex 或 Claude Code。
+
 ## 连接、登录与恢复
 
 用户要求“连接 OpRun”“登录”或“列出项目”时，先确定 MCP 是否可用。安装此 Skill 只提供操作指引，不会自动创建宿主的 MCP 连接。
