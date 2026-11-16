@@ -38,10 +38,22 @@ gh skill install TeamSillyBees/oprun-skills oprun-project-planning@main --agent 
 
 ## 维护发布
 
-本仓库分发 Skill、安装说明和公开连接配置。`release.json` 记录版本及文档参考的 OpRun 源码版本，不代表生产已发布。提交变更后运行：
+Skill 内容的唯一来源是 OpRun 仓库的 `integrations/agent-skills/oprun-project-planning`，与服务端协议同仓维护，并由 OpRun MCP 以资源形式提供。**不要直接修改本仓库的 `skills/`**；修改先合入 OpRun `main`，再同步到这里。本仓库只维护安装说明、通用连接示例、同步和打包工具。
 
-```sh
-python3 tools/package.py --output-dir dist/v1.0.3
-```
+1. 在 OpRun 本地克隆中拉取最新 `main`，然后在本仓库运行（默认 `origin/main`，拒绝未合入 main 的提交）：
 
-输出可复现的 ZIP、安装指南、通用、WorkBuddy 及 Qveris MCP 配置、`manifest.json` 与 `SHA256SUMS`。v1.0.3 ZIP 包含 Skill 正文、多宿主、WorkBuddy 及 Qveris 接入指引和配置。清单记录本仓库提交、OpRun 源码参考和各文件校验值；`oprun_revision` 不代表线上当前版本。为新版本使用新的输出目录和版本标签，发布前运行 `python3 -m unittest discover -s tests`。源码更新与 Release 发布分开执行，不覆盖旧资产。
+   ```sh
+   python3 tools/sync.py --oprun ../oprun
+   ```
+
+   脚本按来源提交完整替换 `skills/oprun-project-planning/`，删除上游已移除的文件，并把来源提交写入 `release.json` 的 `oprun_revision`。核对差异后更新 `version`。
+
+2. 运行 `python3 -m unittest discover -s tests` 和 `python3 tools/sync.py --oprun ../oprun --check`，确认 `skills/` 与记录的来源提交完全一致。
+
+3. 提交并推送后打包。独立 INSTALL.md 链接到该提交，未推送时脚本拒绝打包；仅本地试打包可加 `--allow-unpushed`：
+
+   ```sh
+   python3 tools/package.py --output-dir dist/v<版本>
+   ```
+
+输出可复现的 ZIP、安装指南、通用及各宿主 MCP 配置（Skill 中的 `assets/*-mcp.json`）、`manifest.json` 与 `SHA256SUMS`。ZIP 即同步来的完整 Skill 目录；清单的 `skill_files` 列出每个成员的校验值，`oprun_revision` 是 Skill 来源提交，不代表线上当前版本。为新版本使用新的输出目录和版本标签；源码更新与 Release 发布分开执行，不覆盖旧资产。
