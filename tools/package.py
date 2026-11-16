@@ -2,6 +2,7 @@
 """Package the committed Skill and onboarding files without changing prior builds."""
 
 import argparse
+import fnmatch
 import hashlib
 import json
 from pathlib import Path
@@ -11,88 +12,103 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL_FILES = (
-    "SKILL.md",
-    "references/workbuddy.md",
-    "references/hosts.md",
-    "assets/workbuddy-mcp.json",
-    "references/qveris.md",
-    "assets/qveris-mcp.json",
-    "assets/qveris-worker-mcp.json",
-    "assets/qveris-publisher-mcp.json",
-    "references/matching.md",
-)
-SOURCES = (
-    "release.json",
-    *(f"skills/oprun-project-planning/{path}" for path in SKILL_FILES),
-    "INSTALL.md",
-    "mcp.json",
-    "tools/package.py",
-)
+SKILL_DIR = "skills/oprun-project-planning"
+FIXED_SOURCES = ("release.json", "INSTALL.md", "mcp.json", "tools/package.py", "tools/sync.py")
+# Host import files are published next to the ZIP so users can import them directly.
+HOST_CONFIG = "assets/*-mcp.json"
+
+
+def git(*args):
+    return subprocess.check_output(["git", *args], cwd=ROOT, text=True, encoding="utf-8")
+
+
+def skill_files(revision="HEAD"):
+    """Every committed file of the Skill; the tree synced from OpRun decides the list."""
+    listing = git("ls-tree", "-r", "-z", "--name-only", "--full-tree", revision, "--", SKILL_DIR + "/")
+    return sorted(path[len(SKILL_DIR) + 1:] for path in filter(None, listing.split("\0")))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--allow-unpushed",
+        action="store_true",
+        help="skip the remote check (local trial builds only; links will 404)",
+    )
     args = parser.parse_args()
-    revision = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-    ).strip()
-    contents = {}
-    for path in SOURCES:
-        contents[path] = subprocess.check_output(
-            ["git", "show", f"{revision}:{path}"], cwd=ROOT
-        )
-        if (ROOT / path).read_bytes() != contents[path]:
-            raise SystemExit(f"Commit the package source before building: {path}")
+    revision = git("rev-parse", "HEAD").strip()
+    # Compare normalized content with Git rather than raw bytes: CRLF checkouts
+    # (core.autocrlf) stay clean, while edits, staged changes and untracked files
+    # under skills/ do not. `git status` is unsuitable: it flags any size change.
+    paths = ("--", *FIXED_SOURCES, SKILL_DIR)
+    dirty = git("diff", "HEAD", "--name-only", *paths) + git("ls-files", "--others", "--exclude-standard", *paths)
+    if dirty:
+        raise SystemExit(f"Commit the package source before building:\n{dirty}")
+    files = skill_files(revision)
+    if "SKILL.md" not in files:
+        raise SystemExit(f"{SKILL_DIR}/SKILL.md is not committed")
+    sources = (*FIXED_SOURCES, *(f"{SKILL_DIR}/{name}" for name in files))
+    contents = {
+        path: subprocess.check_output(["git", "show", f"{revision}:{path}"], cwd=ROOT)
+        for path in sources
+    }
 
     release = json.loads(contents["release.json"])
     if not re.fullmatch(r"\d+\.\d+\.\d+", release["version"]):
         raise SystemExit("release.json must contain a stable semantic version")
+    tag = "v" + release["version"]
+    tagged = git("tag", "--list", tag, "--format=%(objectname)^{commit}").strip()
+    if tagged and git("rev-parse", tagged).strip() != revision:
+        raise SystemExit(f"{tag} already exists on another commit; bump release.json")
+    # The standalone INSTALL.md links to blob/<revision>; it must exist remotely.
+    if not args.allow_unpushed and not git("branch", "-r", "--contains", revision).strip():
+        raise SystemExit(f"Push {revision} before building release assets")
     # A fresh directory prevents overwriting previously reviewed release assets.
     args.output_dir.mkdir(parents=True, exist_ok=False)
     bundle = args.output_dir / "oprun-project-planning.zip"
     with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for path in SKILL_FILES:
+        for name in files:
             info = zipfile.ZipInfo(
-                f"oprun-project-planning/{path}", date_time=(1980, 1, 1, 0, 0, 0)
+                f"oprun-project-planning/{name}", date_time=(1980, 1, 1, 0, 0, 0)
             )
             info.external_attr = 0o100644 << 16
             info.compress_type = zipfile.ZIP_DEFLATED
-            archive.writestr(info, contents[f"skills/oprun-project-planning/{path}"])
+            archive.writestr(info, contents[f"{SKILL_DIR}/{name}"])
 
     for name in ("INSTALL.md", "mcp.json"):
         data = contents[name]
         if name == "INSTALL.md":
             # The standalone release guide has no repository-relative skills/.
             prefix = f"](https://github.com/{release['repository']}/blob/{revision}/skills/"
-            data = data.decode().replace("](skills/", prefix).encode()
+            data = data.decode("utf-8").replace("](skills/", prefix).encode("utf-8")
         (args.output_dir / name).write_bytes(data)
-    for host in ("workbuddy", "qveris", "qveris-worker", "qveris-publisher"):
-        (args.output_dir / f"{host}-mcp.json").write_bytes(
-            contents[f"skills/oprun-project-planning/assets/{host}-mcp.json"]
-        )
+    for name in files:
+        if fnmatch.fnmatchcase(name, HOST_CONFIG):
+            (args.output_dir / Path(name).name).write_bytes(contents[f"{SKILL_DIR}/{name}"])
     hashes = {
         path.name: hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(args.output_dir.iterdir())
     }
     manifest = {
         **release,
-        "tag": "v" + release["version"],
+        "tag": tag,
         "revision": revision,
         "files": hashes,
-        "skill_sha256": hashlib.sha256(
-            contents["skills/oprun-project-planning/SKILL.md"]
-        ).hexdigest(),
+        "skill_sha256": hashlib.sha256(contents[f"{SKILL_DIR}/SKILL.md"]).hexdigest(),
+        # Installers verify extracted members against this list instead of a hand-kept one.
+        "skill_files": {
+            name: hashlib.sha256(contents[f"{SKILL_DIR}/{name}"]).hexdigest() for name in files
+        },
     }
     manifest_path = args.output_dir / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    # Bytes, not text mode: Windows would otherwise write CRLF and change the digests.
+    manifest_path.write_bytes(
+        (json.dumps(manifest, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
     )
     hashes["manifest.json"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
-    (args.output_dir / "SHA256SUMS").write_text(
-        "".join(f"{digest}  {name}\n" for name, digest in sorted(hashes.items())),
-        encoding="utf-8",
+    (args.output_dir / "SHA256SUMS").write_bytes(
+        "".join(f"{digest}  {name}\n" for name, digest in sorted(hashes.items())).encode("utf-8")
     )
     print(f"Packaged v{release['version']} from {revision} in {args.output_dir}")
 

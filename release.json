@@ -1,7 +1,7 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "repository": "TeamSillyBees/oprun-skills",
   "skill": "oprun-project-planning",
-  "oprun_revision": "95437b781f8677f87db264eb40e4dc736ab12549",
+  "oprun_revision": "f9f6b738b02bea566cb2f5df07bd5b8913b47fae",
   "grant_version": 2
 }

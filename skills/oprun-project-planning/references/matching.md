@@ -53,7 +53,7 @@
 ## 发单
 
 1. 先确定真实发单身份与能力。用户已有项目时直接读取项目，不重新生成或发布。
-2. 用户要求新建时，使用 `oprun_generate_plan` → `oprun_plan_result` 获取 OpRun 已生成的方案。准备发布使用 `oprun_prepare_publication`，传入原 `subject_id`、`task_id`、精确 `version`、结果中的 `direction` 和 `request_key`。不把宿主自编 JSON 或预览任务编号当成正式项目。
+2. 用户要求新建并发布时，`oprun_prepare_publication` 只接受 OpRun 生成的任务：先告知将委托小君生成并使用所选身份的模型额度，用户同意后再用 `oprun_generate_plan` → `oprun_plan_result` 获取方案。当前 Agent 编写的草稿走 SKILL 的保存流程，不能直接发布。准备发布使用 `oprun_prepare_publication`，传入原 `subject_id`、`task_id`、精确 `version`、结果中的 `direction` 和 `request_key`。不把宿主自编 JSON 或预览任务编号当成正式项目。
 3. 用户确认承诺书后，按上述“查询状态 → 执行”流程取得正式 `project_id`。只有收到业务回执并核对原任务对应项目后才报告创建成功。
 4. `oprun_match_project` 读取实际工序及版本；`oprun_match_candidates` 使用同一身份、项目和 `node_pk` 分页获取真实候选。空列表明确说明，不虚构人选。
 5. 用户选择候选后，用 `oprun_prepare_match(action=invite)`，携带 `worker_id`、当前工序 `version` 和独立 `request_key`；用户网页确认后执行。
@@ -68,4 +68,4 @@
 - 重新授权后旧操作可能无法访问。按项目和邀请的业务状态恢复，不能假定旧确认仍有效；历史回执与实时状态分别说明。
 - 安装及连接检查只调用工具列表和账号上下文。真实接受、拒绝、选定、撤回及发布会改变业务数据，须在用户实际任务或明确授权的隔离验收范围内执行。
 
-协议核对基线为 OpRun `main@95437b781f8677f87db264eb40e4dc736ab12549`，见 [ADR 0056](https://github.com/TeamSillyBees/oprun/blob/95437b781f8677f87db264eb40e4dc736ab12549/docs/adr/0056-external-project-planning-mcp.md)。本包不修改服务端、权限或账本；本地验证不等于真实接单闭环已验收。
+协议与权限规则以 OpRun 仓库 ADR 0056 为准；本页与服务端同仓维护，所装版本与线上版本的核对方法见[更新与兼容](updates.md)。Skill 不修改服务端、权限或账本；本地验证不等于真实接单闭环已验收。
