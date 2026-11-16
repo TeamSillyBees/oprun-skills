@@ -1,17 +1,10 @@
 # 多宿主连接 OpRun
 
-MCP 地址为 `https://www.agi.yifx.vip/mcp`。安装 Skill 后仍需在宿主添加 MCP 连接，再由宿主启动 OAuth；浏览器直接打开网站不会替宿主完成连接。本包可以先于服务端更新安装。下列新增能力对应 OpRun 源码 `1659eef336b37024f28e32976aa36598c2204d1a`；这个提交标识不代表目标站点已发布。接入时读取目标站点的 `/mcp/setup` 和授权元数据，并核对服务端发布说明。
-
-## 先核对服务端能力
-
-- 元数据提供 `registration_endpoint` 时，默认沿用宿主动态注册（DCR）和 S256 PKCE。
-- `/mcp/setup` 尚无 `profiles` 时，使用宿主原生配置、下文示例或随包的 [WorkBuddy 配置](../assets/workbuddy-mcp.json)；缺少 `profiles` 不表示现有 DCR 接入不可用。
-- WorkBuddy 原生回调、受管公共客户端 ID、回环端口变化和授权响应 `iss` 需要相应服务端修复上线。Skill 安装不能启用这些服务端能力；未上线时保留可用的原连接，将不受支持的回调报为待服务端升级，不反复重装或修改回调绕过校验。
-- 只有授权元数据明确返回 `client_id_metadata_document_supported: true` 才选择 CIMD；缺失或为 `false` 时使用 DCR。只支持 CIMD 的宿主需等待服务端出站网络就绪并启用该能力。
+MCP 地址为 `https://www.agi.yifx.vip/mcp`。安装 Skill 后仍需在宿主添加 MCP 连接，再由宿主启动 OAuth；浏览器直接打开网站不会替宿主完成连接。以下配置针对本版本实现，是否已发布应以目标站点的 `/mcp/setup` 和授权元数据为准。
 
 ## 选择宿主配置
 
-服务端提供 `/mcp/setup` 的 `profiles` 时，按宿主选择独立配置。将所需条目合并到该宿主配置中，保留其他连接。
+`/mcp/setup` 的 `profiles` 按宿主返回独立配置。将所需条目合并到该宿主配置中，保留其他连接。
 
 | 宿主 | 入口和格式 | 回调特征与注意事项 |
 | --- | --- | --- |
@@ -22,7 +15,7 @@ MCP 地址为 `https://www.agi.yifx.vip/mcp`。安装 Skill 后仍需在宿主�
 | Claude Code | `profiles.claude_code.command` 的命令参数 | CLI 使用回环随机端口；localhost 与 127.0.0.1 不互换，由客户端实际登记决定 |
 | Claude 云连接器 | 在设置的连接器入口填写 `profiles.claude_cloud.url` | 即使从桌面应用操作也可能是云端 HTTPS 回调；不能套用 Claude Code 的回环配置 |
 | Codex | `profiles.codex.command` 的命令参数 | 自动注册或 CIMD 由宿主版本决定；资源 URL 与 MCP URL 一致，回环端口可变化，路径仍须登记一致 |
-| ChatGPT | 在对应工作区的自定义 MCP／开发者连接器入口填写 `profiles.chatgpt.url`，认证 OAuth | 使用宿主生成的动态或稳定 HTTPS 回调；仅在元数据声明支持时要求授权响应 `iss`；不要假定所有产品入口使用同一个回调 |
+| ChatGPT | 在对应工作区的自定义 MCP／开发者连接器入口填写 `profiles.chatgpt.url`，认证 OAuth | 使用宿主生成的动态或稳定 HTTPS 回调；服务端已支持授权响应 `iss`，不要假定所有产品入口使用同一个回调 |
 
 例如 VS Code 的完整配置为：
 
@@ -47,20 +40,31 @@ Codex：
 
 ```sh
 codex mcp add oprun --url https://www.agi.yifx.vip/mcp --oauth-resource https://www.agi.yifx.vip/mcp
-codex mcp login oprun
 ```
+
+Codex 添加时即开始授权，所以先确认授权范围再添加。只有该次授权未完成才执行 `codex mcp login oprun`；只读时用 `codex mcp login oprun --scopes plan:read`。
 
 只读连接可在宿主支持时指定 `plan:read`。添加命令成功仅说明配置已保存，继续完成浏览器授权，并调用 `oprun_account_context` 才能确认连接。
 
 ## 接单与发单能力
 
-方案默认范围不包含匹配。按[匹配指引](matching.md)选择方案、接单或发单配置；已有连接增加权限需要重新授权并刷新工具。不要因为缺工具直接更改账号权限。
+方案默认范围不包含匹配。按[匹配指引](matching.md)选择方案、接单或发单范围；已有连接增加权限需要重新授权并刷新工具。不要因为缺工具直接更改账号权限。
+
+## 方案展示
+
+只有工具列表实际包含 `oprun_view_plan` 时才启用交互查看。它声明标准 MCP Apps 资源；资源通过宿主桥接读取数据，不获取网页登录 Cookie。
+
+- WorkBuddy：安装版本 5.9.3 的只读代码探测确认支持 `_meta.workbuddy.ui.launchSurface=panel`，请求级展示偏好优先；实际摆放由宿主控制。此证据不是完整产品验收。
+- 标准 MCP Apps 宿主：使用宿主允许的内嵌区域。VS Code 官方文档当前标为实验性内嵌能力；不能把所有版本视为支持侧栏。
+- 未提供 UI、尚未验证或只支持命令行的宿主：使用工具返回的 `web_url` 登录查看。链接不含凭据，也不能转给其他账号越权查看。
+
+授权连接成功、读取资源成功、实际界面展示成功是不同检查项。不要因为连接已通就报告右侧栏已通过验收；也不要通过安装无关扩展或修改浏览器安全策略强行嵌入页面。
 
 ## 客户端注册选择
 
-默认使用宿主动态注册（DCR）。CIMD 需服务端验证宿主元数据的公共 HTTPS 出站访问后，显式设置 `OPRUN_MCP_OAUTH_CIMD_ENABLED=true` 才启用；运营端能力状态与发现元数据同步。关闭时宿主应选择 DCR，或服务端已部署支持的受管公共客户端，仅支持 CIMD 的宿主需要先完成出站网络配置。支持 CIMD 的授权元数据包含 `client_id_metadata_document_supported: true`，文档必须公开通过 HTTPS 返回 JSON，文档 `client_id` 与 URL 完全一致，且登记本次实际回调。文档不要包含 Cookie、密钥或用户凭据。若同时公布 `none` 与其他认证方式，OpRun 选择 `none + PKCE`；只有 `private_key_jwt` 的客户端不在本版本支持范围。
+默认使用宿主动态注册（DCR）。CIMD 由目标站点按部署启用，默认关闭；只有授权元数据返回 `client_id_metadata_document_supported: true` 时才选择 CIMD，缺失或为 `false` 时宿主应选择 DCR 或本文的受管公共客户端，只支持 CIMD 的宿主需等待站点启用。支持 CIMD 的授权元数据包含 `client_id_metadata_document_supported: true`，文档必须公开通过 HTTPS 返回 JSON，文档 `client_id` 与 URL 完全一致，且登记本次实际回调。文档不要包含 Cookie、密钥或用户凭据。若同时公布 `none` 与其他认证方式，OpRun 选择 `none + PKCE`；只有 `private_key_jwt` 的客户端不在本版本支持范围。
 
-只有宿主明确提供手动公共客户端字段且自动模式不可用，且目标服务端已部署对应登记时，才使用以下公共 ID；不要仅按 Skill 版本填写：
+只有宿主明确提供手动公共客户端字段且自动模式不可用时，使用本版本已有的登记：
 
 | 公共客户端 ID | 登记回调 |
 | --- | --- |
@@ -70,7 +74,7 @@ codex mcp login oprun
 
 上述 ID 无密钥，使用 `none` 和 S256 PKCE；回环端口可变化，路径和 query 不可变化。使用不同路径的宿主版本应保留自动注册/CIMD，不能强行套用已有 ID。其他手填 ID 不会自动注册。共享公共 ID 每次都需要用户确认。
 
-服务端规则与受管列表由 OpRun 服务仓库的 ADR 0056 及回调策略维护；本仓库分发安装说明，不能改变目标站点策略。WorkBuddy 开放平台云连接器涉及不同的服务端凭据托管，本版本未发布或迁移到该形态。
+这些规则的唯一权威说明是 OpRun 仓库 ADR 0056；Skill 不能改变目标站点的回调策略和受管列表。WorkBuddy 开放平台云连接器涉及不同的服务端凭据托管，本版本未发布或迁移到该形态。
 
 ## 定位失败与验收
 
@@ -85,7 +89,7 @@ codex mcp login oprun
 
 发布后的每个宿主版本至少完成：未登录连接、已登录允许与拒绝、回到宿主、`oprun_account_context`、`oprun_list_projects`、刷新、撤销后调用被拒绝。用无项目的账号也可验证连接，项目列表为空不表示授权失败。
 
-OpRun 服务仓库的协议矩阵覆盖上述宿主的代表回调形态，并验证错误边界；它不等同于各桌面应用或云产品的实际验收。服务监控的进程计数同样不构成宿主验收结果。
+仓库的协议矩阵覆盖上述宿主的代表回调形态，并验证错误边界；它不等同于各桌面应用或云产品的实际验收。
 
 ## 官方案例
 
