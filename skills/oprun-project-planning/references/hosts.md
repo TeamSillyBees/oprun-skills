@@ -15,6 +15,7 @@ MCP 地址为 `https://www.agi.yifx.vip/mcp`。安装 Skill 后仍需在宿主�
 
 | 宿主 | 入口和格式 | 回调特征与注意事项 |
 | --- | --- | --- |
+| QVeris Studio | [专用 JSON](../assets/qveris-mcp.json) 导入自定义 MCP；显式设置 `authMode`、`issuer`、`scope` | 1.0.22 使用动态注册及本机随机端口 `/callback`；授权地址不能留空，详见 [Qveris 指引](qveris.md) |
 | WorkBuddy 桌面 | `profiles.workbuddy`；完整 `mcpServers` JSON，传输 `streamableHttp` | 已确认的私有回调为 `workbuddy://workbuddy/mcp/oauth/callback`；自动打开受阻时点击返回应用链接 |
 | Cursor | `profiles.cursor`；`mcpServers` 下配置 `url` | 同一注册可含 HTTPS 云回调和 localhost 桌面回调；必须分别完整登记 |
 | VS Code | `profiles.vscode`；`.vscode/mcp.json` 顶层为 `servers`，传输 `http` | 支持宿主自己的 HTTPS 元数据文档 ID；桌面回环与 `https://vscode.dev/redirect` 是不同回调；`vscode:mcp/install` 是安装链接，不是授权回调 |
@@ -51,6 +52,10 @@ codex mcp login oprun
 
 只读连接可在宿主支持时指定 `plan:read`。添加命令成功仅说明配置已保存，继续完成浏览器授权，并调用 `oprun_account_context` 才能确认连接。
 
+## 接单与发单能力
+
+方案默认范围不包含匹配。按[匹配指引](matching.md)选择方案、接单或发单配置；已有连接增加权限需要重新授权并刷新工具。不要因为缺工具直接更改账号权限。
+
 ## 客户端注册选择
 
 默认使用宿主动态注册（DCR）。CIMD 需服务端验证宿主元数据的公共 HTTPS 出站访问后，显式设置 `OPRUN_MCP_OAUTH_CIMD_ENABLED=true` 才启用；运营端能力状态与发现元数据同步。关闭时宿主应选择 DCR，或服务端已部署支持的受管公共客户端，仅支持 CIMD 的宿主需要先完成出站网络配置。支持 CIMD 的授权元数据包含 `client_id_metadata_document_supported: true`，文档必须公开通过 HTTPS 返回 JSON，文档 `client_id` 与 URL 完全一致，且登记本次实际回调。文档不要包含 Cookie、密钥或用户凭据。若同时公布 `none` 与其他认证方式，OpRun 选择 `none + PKCE`；只有 `private_key_jwt` 的客户端不在本版本支持范围。
@@ -71,6 +76,7 @@ codex mcp login oprun
 
 按发现、注册、授权、回跳、换码、工具调用六个阶段排查。记录宿主名称及版本、失败路径、HTTP 状态、`error` 和 `stage`；不复制带参数的授权 URL、授权码、Cookie、Token 或完整回调响应。
 
+- `401 invalid_token`：先区分尚未授权和已有令牌失效；Qveris 核对专用配置的 OAuth、issuer 与 Scope，重新授权后再刷新工具。错误中的 `stage` 为空不代表请求已完成 OAuth。
 - `invalid_redirect_uri`：核对登记回调和实际回调，不能用通配符、任意 scheme 或修改主机绕过。
 - `invalid_client_metadata`：核对公共客户端认证方式、授权类型和回调字段。
 - `invalid_client`：DCR 过期时重建该连接；CIMD 检查公网 HTTPS 可达、JSON、字段和响应大小；预注册核对登记 ID。

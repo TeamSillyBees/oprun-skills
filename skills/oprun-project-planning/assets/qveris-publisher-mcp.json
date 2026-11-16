@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "oprun": {
+      "type": "http",
+      "url": "https://www.agi.yifx.vip/mcp",
+      "authMode": "oauth",
+      "issuer": "https://www.agi.yifx.vip/mcp",
+      "scope": "plan:read plan:generate plan:publish match:read match:propose"
+    }
+  }
+}

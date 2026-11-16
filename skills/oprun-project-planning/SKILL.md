@@ -1,6 +1,6 @@
 ---
 name: oprun-project-planning
-description: Connect or reconnect OpRun in WorkBuddy or another remote MCP host, discover accessible projects and read their plans, propose deliverables, or ask Xiaojun to generate and revise a project graph and quote.
+description: Connect or reconnect OpRun in QVeris Studio, WorkBuddy or another remote MCP host, discover accessible projects and read their plans, propose deliverables, handle invitations and matching with user confirmation, or ask Xiaojun to generate and revise a project graph and quote.
 ---
 
 # OpRun 项目方案
@@ -16,9 +16,9 @@ description: Connect or reconnect OpRun in WorkBuddy or another remote MCP host,
 接入提示只表达安装、连接和登录。登录或连接验证尚未完成时，只说明当前状态与需要用户完成的下一步；可用操作放在连接成功后的回复末尾。
 
 1. 检查宿主已加载的 OpRun 工具或原生 MCP 配置。已有同站点连接则复用；同名连接指向其他站点时说明冲突，不覆盖。
-2. 缺少连接时，使用当前宿主支持的配置工具添加名为 `oprun` 的远程 Streamable HTTP MCP，并启动宿主原生 OAuth。WorkBuddy 的配置和具体操作见随包提供的 [WorkBuddy 接入指引](references/workbuddy.md) 与 [连接配置](assets/workbuddy-mcp.json)。不要在 WorkBuddy 中运行 Codex 专用命令。
+2. 缺少连接时，使用当前宿主支持的配置工具添加名为 `oprun` 的远程 Streamable HTTP MCP，并启动宿主原生 OAuth。WorkBuddy 的配置和具体操作见随包提供的 [WorkBuddy 接入指引](references/workbuddy.md) 与 [连接配置](assets/workbuddy-mcp.json)。QVeris Studio 使用 [Qveris 接入指引](references/qveris.md) 和 [专用配置](assets/qveris-mcp.json)，显式指定 OAuth、issuer 和 Scope。不要跨宿主套用配置或登录命令。
 3. 宿主没有配置工具时，向用户提供上述地址和可导入的配置，明确当前为“已安装 Skill，待添加连接器”，引导其添加并点击“连接”。不要仅让用户重复说“连接”或重装 Skill。
-4. 由用户在宿主打开的页面登录并确认范围。标准范围为 `plan:read`、`plan:propose`、`plan:generate`；用户只要求只读授权时，使用宿主支持的范围设置仅申请 `plan:read`，不默认扩大权限。若宿主不能指定范围，先说明限制。没有弹窗时，检查是否已创建连接及其状态；只有宿主已生成授权链接时才展示该链接，不能猜测授权地址。
+4. 由用户在宿主打开的页面登录并确认范围。方案范围为 `plan:read`、`plan:propose`、`plan:generate`；接单和发单先按[匹配指引](references/matching.md)选取所需 Scope，新增权限必须重新授权；用户只要求只读授权时，使用宿主支持的范围设置仅申请对应只读权限（方案 `plan:read`、邀请 `match:read`），不默认扩大权限。若宿主不能指定范围，先说明限制。没有弹窗时，检查是否已创建连接及其状态；只有宿主已生成授权链接时才展示该链接，不能猜测授权地址。
 5. 通过 MCP `tools/list` 确认可用工具，再调用 `oprun_account_context` 做只读连接验证。工具调用成功才报告“已连接”；配置存在或 Skill 已加载不能证明授权成功。用户只要求接入时，到此完成验证，按文末规则给出下一步引导；用户已经要求查看项目或处理方案时，继续原任务。
 
 凭据交给宿主保存，不索取密码、Token 或 Cookie，不将授权链接写入文件和日志，不自行实现另一个 OAuth 客户端。连接支持续期时由宿主刷新；返回 `invalid_grant` 时重新授权，返回 `invalid_client` 时使用宿主的重建注册功能；没有该功能则仅重新添加 OpRun 连接，不清除其他连接。安装和连接验收不生成方案、不保存草稿、不消耗模型额度。
@@ -44,6 +44,10 @@ description: Connect or reconnect OpRun in WorkBuddy or another remote MCP host,
 2. 用 `oprun_plan_result` 按相同身份和任务编号查进度。排队或执行中时逐步延长查询间隔。完成后展示工序、依赖、工时和报价；费用以返回的方案为准。
 3. 用户补充需求时用 `oprun_supplement_plan` 传入原身份、任务编号、原版本和新要求。用相同任务编号查最新结果，或指定版本对照。已撤销或过期的连接由用户重新授权。
 
+## 接单、发单与匹配
+
+用户要查看邀请、接受／拒绝意向、发布项目、邀请／选定接单人或跟踪匹配时，读取[匹配操作指引](references/matching.md)。先核对当前身份、Scope 和实际工具；缺少匹配权限时引导重新授权，不报告“没有邀请”。所有写操作遵循准备、用户网页确认、状态核验、执行、业务回查的顺序，不把接受意向当作最终选定。
+
 ## 连接成功后的回复
 
 用户只要求接入时，简短确认“已连接 OpRun”，在回复末尾给出可用的下一步，等待用户选择。根据实际可用工具，以及 `oprun_account_context` 返回的 `scopes` 和各身份能力筛选引导：
@@ -51,5 +55,8 @@ description: Connect or reconnect OpRun in WorkBuddy or another remote MCP host,
 - `can_read_plans`：查看项目和当前方案。
 - `can_propose_changes`：提出交付要求的修改，确认后保存草稿。
 - `can_generate_plans`：根据需求生成方案和报价，使用所选身份的模型额度。
+- `can_read_matching`：按当前身份查看自己的邀请或可管理项目的匹配进度。
+- `can_propose_matching`：worker 可提议接受／拒绝意向；发单方按项目权限提议邀请／选定／撤回，用户确认后执行。
+- `can_publish_generated_plans`：确认承诺书后发布 OpRun 已生成的方案。
 
 只读连接只展示查看选项；没有可用身份时，依据 `unavailable_reason` 说明需要完成的操作。这里只提供引导，不自动列出项目、读取方案或执行修改。用户原请求已经包含业务任务时，继续该任务并报告结果，无需让用户重新选择。

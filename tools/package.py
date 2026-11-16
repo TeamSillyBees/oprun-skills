@@ -16,6 +16,11 @@ SKILL_FILES = (
     "references/workbuddy.md",
     "references/hosts.md",
     "assets/workbuddy-mcp.json",
+    "references/qveris.md",
+    "assets/qveris-mcp.json",
+    "assets/qveris-worker-mcp.json",
+    "assets/qveris-publisher-mcp.json",
+    "references/matching.md",
 )
 SOURCES = (
     "release.json",
@@ -63,9 +68,10 @@ def main():
             prefix = f"](https://github.com/{release['repository']}/blob/{revision}/skills/"
             data = data.decode().replace("](skills/", prefix).encode()
         (args.output_dir / name).write_bytes(data)
-    (args.output_dir / "workbuddy-mcp.json").write_bytes(
-        contents["skills/oprun-project-planning/assets/workbuddy-mcp.json"]
-    )
+    for host in ("workbuddy", "qveris", "qveris-worker", "qveris-publisher"):
+        (args.output_dir / f"{host}-mcp.json").write_bytes(
+            contents[f"skills/oprun-project-planning/assets/{host}-mcp.json"]
+        )
     hashes = {
         path.name: hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(args.output_dir.iterdir())
