@@ -13,7 +13,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL_DIR = "skills/oprun-project-planning"
-FIXED_SOURCES = ("release.json", "INSTALL.md", "mcp.json", "tools/package.py", "tools/sync.py", "tools/install.py")
+FIXED_SOURCES = ("release.json", "INSTALL.md", "mcp.json", "tools/package.py", "tools/sync.py", "tools/install.py", "tools/upload_assets.py")
 # Host import files are published next to the ZIP so users can import them directly.
 HOST_CONFIG = "assets/*-mcp.json"
 

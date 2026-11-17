@@ -2,13 +2,15 @@
 
 用户说“安装 OpRun”或“更新 OpRun”时，执行以下简短流程。默认使用最新正式 Release，不用移动的 main 作为安装版本。
 
-1. 识别当前宿主和已有连接，不向用户追问已能确定的信息。下载同一正式版本的 `install.py`、`manifest.json`、`SHA256SUMS`；从官方仓库 HTTPS 获取并核对脚本摘要后执行，不使用 curl 管道直接运行。
+1. 先核对当前会话能用的工具和已有连接。Qveris 中连接已保存不等于在本会话启用：在输入框“本对话已启用”中勾选 oprun；工具缺失时只检查一次，不反复用全局研究工具搜索代替。没有下载、文件写入或命令执行能力时，不尝试用研究工具安装软件，直接使用原生 Skill 导入。不要因为界面显示“任务工具离线”就推断 MCP 不可用，独立验证连接。识别当前宿主，不向用户追问已能确定的信息。下载同一正式版本的 `install.py`、`manifest.json`、`SHA256SUMS`；从官方仓库 HTTPS 获取并核对脚本摘要后执行，不使用 curl 管道直接运行。
 2. 使用 Python 3.9+：`python3 install.py install --host <宿主>`；更新用 `update`。支持 codex、claude、qveris、workbuddy；无法确定时用 generic。项目目录只在已有明确标记时自动识别；多个标记不猜测。桌面宿主先用其原生安装器导入完整 ZIP；若宿主公开了 Skill 目录，可用 `--target <完整目录>`。不猜测桌面应用内部数据库位置。
 3. 工具校验正式包并保护本地修改，更新保留原目录备份。读取工具输出的客户端配置，使用宿主原生能力导入；同站点连接直接复用。导入受限时只让用户完成一次配置导入。用户要求只读时加 `--readonly` 并在 OAuth 中申请输出的只读 scopes；既有授权不自动扩大。
 4. 用户完成登录授权。运行 `python3 install.py check` 检查公开发现；再由宿主调用 `tools/list`、`oprun_account_context`。发现通过不代表授权成功，不读取项目，不生成方案。`check --target <目录>` 可同时校验已安装文件。
 5. 简短报告“已安装／已更新、已连接”，仅在相应步骤实际成功时使用。等待用户操作时说明具体一步。Qveris 真实客户端验收仍由人工完成，不以脚本测试替代。
 
 再次更新沿用同一流程，不重建连接、不删除用户配置。工具输出 backup 是恢复目录；需要恢复时先核对现有内容再还原，不能覆盖新的本地修改。早期非托管安装只读比较；内容有差异时先保存、核对，不强行覆盖。
+
+安装说明获取失败时：若网页读取工具拒绝 `application/octet-stream`，改读 https://github.com/TeamSillyBees/oprun-skills/blob/main/INSTALL.md；仍无法读取时使用 GitHub Contents API 的 INSTALL.md（content 为 Base64）。同一错误不重复请求。说明入口可跟随 main，实际安装包始终固定正式 Release 标签。
 
 以下为宿主差异和排错参考，无需逐条展示给用户。
 
