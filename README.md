@@ -10,7 +10,7 @@ Agent 需要支持安装 Skill 和远程 HTTP MCP OAuth。首次登录由你完�
 
 WorkBuddy 安装 Skill 后还需添加 MCP 连接器并授权，具体见随包的 [接入指引](skills/oprun-project-planning/references/workbuddy.md) 和 [连接配置](skills/oprun-project-planning/assets/workbuddy-mcp.json)。已安装 Skill 时，直接说“连接 OpRun，带我完成登录”。
 
-QVeris Studio 使用 [专用接入指引](skills/oprun-project-planning/references/qveris.md) 和 [连接配置](skills/oprun-project-planning/assets/qveris-mcp.json)，显式指定 OAuth、`/mcp` 授权地址及业务 Scope。提供[方案](skills/oprun-project-planning/assets/qveris-mcp.json)、[接单](skills/oprun-project-planning/assets/qveris-worker-mcp.json)、[发单](skills/oprun-project-planning/assets/qveris-publisher-mcp.json)三套配置。方案授权不含匹配；需要接单或发单时按[匹配指引](skills/oprun-project-planning/references/matching.md)重新授权。已保存的连接不会随 Skill 更新自动改变。
+QVeris Studio 使用 [专用接入指引](skills/oprun-project-planning/references/qveris.md) 和 [连接配置](skills/oprun-project-planning/assets/qveris-mcp.json)，显式指定 OAuth、`/mcp` 授权地址及业务 Scope。默认使用[完整配置](skills/oprun-project-planning/assets/qveris-mcp.json)，一次授权覆盖方案、发单、接单和交付；只查看时使用[只读配置](skills/oprun-project-planning/assets/qveris-readonly-mcp.json)。已保存的连接不会随 Skill 更新自动改变，早期只含方案范围的连接需要重新授权。
 
 多宿主配置与新旧服务端兼容方式见[多宿主接入指引](skills/oprun-project-planning/references/hosts.md)。Skill 可以先更新；WorkBuddy 原生回调、受管公共客户端和 CIMD 仍取决于目标服务端是否支持并启用。
 

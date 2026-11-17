@@ -2,14 +2,14 @@
 
 适用于 QVeris Studio 的“自定义 MCP”。配置字段已核对桌面版 1.0.22；其他版本先检查导入后的表单，不把配置检查当成授权成功。
 
-## 按任务选择配置
+## 选择配置
 
-[方案](../assets/qveris-mcp.json)、[接单](../assets/qveris-worker-mcp.json)、[发单](../assets/qveris-publisher-mcp.json) 三选一。下面表格展示方案配置；接单和发单的 Scope 以所选文件为准。需要保留已有能力时按[匹配指引](matching.md)比较并合并范围，重新授权。方案配置不含接单权限。
+默认使用[完整配置](../assets/qveris-mcp.json)：一个连接覆盖方案、发单、接单和交付，每个写操作仍需在 OpRun 网页逐次确认。用户只要求查看时使用[只读配置](../assets/qveris-readonly-mcp.json)。两个账号（例如发单和接单各一个）各建一条连接，用宿主能隔离的连接或独立工作区，不用提示词切换账号。
 
 ## 配置并登录
 
 1. 打开“自定义 MCP”。已有同站点 OpRun 连接时编辑这一条；没有时新增，保留其他连接和工具选择。
-2. 在“从 JSON 配置导入”中粘贴上面选定的配置 JSON，点击“填入表单”。
+2. 在“从 JSON 配置导入”中粘贴选定的配置 JSON，点击“填入表单”。
 3. 核对下表，再点击“保存并授权”，由用户在浏览器登录 OpRun 并确认授权。不要手填 Client ID、密钥或回调地址；客户端自动注册，使用 S256 PKCE 和本机随机端口回调。
 
 | 表单字段 | 标准配置 |
@@ -19,9 +19,9 @@
 | Server URL | `https://www.agi.yifx.vip/mcp` |
 | 认证方式 | OAuth 登录授权 |
 | OAuth 授权服务地址 | `https://www.agi.yifx.vip/mcp` |
-| Scopes | `plan:read plan:propose plan:generate` |
+| Scopes | `plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit`（只读配置为 `plan:read match:read delivery:read`） |
 
-用户只要求只读或已有只读连接时，保留对应只读 Scope；方案用 `plan:read`，邀请用 `match:read`，不要因导入配置扩大授权。用户指定其他 OpRun 站点时，同步替换 URL 和 issuer，并通过该站点的 [MCP 资源元数据](https://www.agi.yifx.vip/.well-known/oauth-protected-resource/mcp) 核对实际授权服务器；不要混用不同环境。
+用户只要求只读或已有只读连接时，使用只读配置，不要因导入配置扩大授权。用户指定其他 OpRun 站点时，同步替换 URL 和 issuer，并通过该站点的 [MCP 资源元数据](https://www.agi.yifx.vip/.well-known/oauth-protected-resource/mcp) 核对实际授权服务器；不要混用不同环境。
 
 这里的授权服务地址是 **issuer**，不是 `/authorize` 授权页面，也不是 `.well-known` 元数据地址。OpRun MCP 的 issuer 带 `/mcp`；不要使用域名根路径的网页登录认证。以目标站点返回的 [授权元数据](https://www.agi.yifx.vip/.well-known/oauth-authorization-server/mcp) 为准，不照表单占位提示填写 `openid offline_access`。
 
@@ -46,11 +46,11 @@
 | 授权地址留空，出现发现失败或客户端注册失败 | 填写站点的 `/mcp` issuer；1.0.22 默认找域名根路径，可能进入网页登录认证。不要修改 OpRun 的根 OIDC 配置 |
 | `invalid_scope` | 使用所选场景的业务 Scope；方案只读用 `plan:read`，邀请只读用 `match:read`，不要添加 `openid offline_access` |
 | 浏览器已授权，`/mcp` 仍返回 `401 invalid_token` | 未授权、令牌失效、错误站点或撤销均可能导致此错误；核对站点并在这一条连接上重新授权，不把所有 401 都归因于 Scope |
-| `403` 且响应声明 `insufficient_scope` | 核对当前请求所需权限；仅在用户确实需要该操作时重新授权，不为加载工具默认申请发布或匹配权限 |
+| 工具结果 `code` 为 `insufficient_scope`（旧版站点为 HTTP `403`） | 此连接缺少 `required_scopes` 中的授权；用户需要该功能时改用完整配置并“重新授权”，不要重试原调用 |
 | `invalid_client` | 通过此连接的“重新授权”重新动态注册；保留其他连接，不手填另一个宿主的客户端 ID |
 | `invalid_grant` | 使用新授权流程，不重复提交旧回调或授权码；业务任务沿用原编号，避免重复创建 |
 | `invalid_redirect_uri` 或回跳未完成 | 核对客户端实际登记的回环地址和服务端策略；不要换成通配符或手改主机、端口、路径 |
-| 方案工具正常，匹配工具缺失，匹配能力为 false | 对照[匹配指引](matching.md)申请 `match:read`／`match:propose` 并重新授权；不把此状态当作没有邀请 |
+| 能力 `reason` 为 `scope_missing`，或旧版站点上匹配工具缺失 | 按[匹配指引](matching.md)改用完整配置并重新授权；不把此状态当作没有邀请 |
 | 工具已加载，对话中仍不可用 | 检查该连接和所需工具是否启用，按宿主要求重载会话；无需重装 Skill 或扩大授权 |
 | 错误的 `stage` 为空 | 当前服务端 MCP 传输入口可能不填此字段；记录客户端版本、无参数的请求路径、HTTP 状态和错误码，不推断为成功或模型问题 |
 

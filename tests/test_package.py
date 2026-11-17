@@ -79,22 +79,22 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual(server["authMode"], "oauth")
         self.assertEqual(server["issuer"], "https://www.agi.yifx.vip/mcp")
         self.assertEqual(server["url"], server["issuer"])
-        self.assertEqual(server["scope"].split(), ["plan:read", "plan:propose", "plan:generate"])
+        self.assertEqual(server["scope"].split(), [
+            "plan:read", "plan:propose", "plan:generate", "plan:publish",
+            "match:read", "match:propose", "delivery:read", "delivery:submit"])
         self.assertEqual(set(server), {"type", "url", "authMode", "issuer", "scope"})
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:
             self.assertEqual(archive.read("oprun-project-planning/assets/qveris-mcp.json"),
                              (output / "qveris-mcp.json").read_bytes())
 
-    def test_role_profiles_preserve_oauth_and_separate_business_permissions(self):
+    def test_readonly_profile_preserves_oauth_and_only_reads(self):
         output = self.build()
-        expected = {
-            "worker": {"plan:read", "match:read", "match:propose"},
-            "publisher": {"plan:read", "plan:generate", "plan:publish", "match:read", "match:propose"},
-        }
+        expected = {"qveris-readonly-mcp.json": {"plan:read", "match:read", "delivery:read"}}
+        self.assertFalse((output / "qveris-worker-mcp.json").exists())
+        self.assertFalse((output / "qveris-publisher-mcp.json").exists())
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:
-            for role, scopes in expected.items():
-                with self.subTest(role=role):
-                    name = f"qveris-{role}-mcp.json"
+            for name, scopes in expected.items():
+                with self.subTest(profile=name):
                     raw = (output / name).read_bytes()
                     server = json.loads(raw)["mcpServers"]["oprun"]
                     self.assertEqual(server["authMode"], "oauth")

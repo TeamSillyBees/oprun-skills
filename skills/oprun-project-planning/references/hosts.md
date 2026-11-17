@@ -8,7 +8,7 @@ MCP 地址为 `https://www.agi.yifx.vip/mcp`。安装 Skill 后仍需在宿主�
 
 | 宿主 | 入口和格式 | 回调特征与注意事项 |
 | --- | --- | --- |
-| QVeris Studio | [专用 JSON](../assets/qveris-mcp.json) 导入自定义 MCP；显式设置 `authMode`、`issuer`、`scope` | 1.0.22 使用动态注册及本机随机端口 `/callback`；授权地址不能留空，详见 [Qveris 指引](qveris.md) |
+| QVeris Studio | [完整配置](../assets/qveris-mcp.json)或[只读配置](../assets/qveris-readonly-mcp.json)导入自定义 MCP；显式设置 `authMode`、`issuer`、`scope` | 1.0.22 使用动态注册及本机随机端口 `/callback`；授权地址不能留空，详见 [Qveris 指引](qveris.md) |
 | WorkBuddy 桌面 | `profiles.workbuddy`；完整 `mcpServers` JSON，传输 `streamableHttp` | 已确认的私有回调为 `workbuddy://workbuddy/mcp/oauth/callback`；自动打开受阻时点击返回应用链接 |
 | Cursor | `profiles.cursor`；`mcpServers` 下配置 `url` | 同一注册可含 HTTPS 云回调和 localhost 桌面回调；必须分别完整登记 |
 | VS Code | `profiles.vscode`；`.vscode/mcp.json` 顶层为 `servers`，传输 `http` | 支持宿主自己的 HTTPS 元数据文档 ID；桌面回环与 `https://vscode.dev/redirect` 是不同回调；`vscode:mcp/install` 是安装链接，不是授权回调 |
@@ -42,13 +42,13 @@ Codex：
 codex mcp add oprun --url https://www.agi.yifx.vip/mcp --oauth-resource https://www.agi.yifx.vip/mcp
 ```
 
-Codex 添加时即开始授权，所以先确认授权范围再添加。只有该次授权未完成才执行 `codex mcp login oprun`；只读时用 `codex mcp login oprun --scopes plan:read`。
+Codex 添加时即开始授权。不指定范围时申请全部功能，用户可在 OpRun 授权页选择“只允许查看”。只有该次授权未完成才执行 `codex mcp login oprun`；也可用 `codex mcp login oprun --scopes "plan:read match:read delivery:read"` 直接申请只读。
 
-只读连接可在宿主支持时指定 `plan:read`。添加命令成功仅说明配置已保存，继续完成浏览器授权，并调用 `oprun_account_context` 才能确认连接。
+宿主不能在配置里指定范围时，授权页的“只允许查看项目、匹配和交付进度”会把连接收窄为 `plan:read match:read delivery:read`。添加命令成功仅说明配置已保存，继续完成浏览器授权，并调用 `oprun_account_context` 才能确认连接。
 
 ## 接单与发单能力
 
-方案默认范围不包含匹配。按[匹配指引](matching.md)选择方案、接单或发单范围；已有连接增加权限需要重新授权并刷新工具。不要因为缺工具直接更改账号权限。
+标准连接一次授权覆盖方案、发单、接单和交付；工具列表对所有授权都相同。早期只申请方案范围的旧连接不会自动扩大，需要发单或接单时重新授权，详见[匹配指引](matching.md)。不要为此更改账号权限。
 
 ## 方案展示
 
