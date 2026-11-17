@@ -1,76 +1,51 @@
-# 给 Agent 的 OpRun 安装指南
+# 安装或更新 OpRun
 
-用户要求接入 OpRun 时，按本指南安装并验证。当前源码版本见仓库根目录的 `release.json`（发布包见 `manifest.json`），是否已有发布包以 [GitHub Releases](https://github.com/TeamSillyBees/oprun-skills/releases) 为准。Skill 为 `oprun-project-planning`，服务地址为 `https://www.agi.yifx.vip/mcp`。用户明确提供其他 OpRun 站点时，使用该站点的 `/mcp`。
+用户说“安装 OpRun”或“更新 OpRun”时，执行以下简短流程。默认使用最新正式 Release，不用移动的 main 作为安装版本。
 
-**WorkBuddy：安装 Skill 不会自动创建 MCP 连接器。** 从 GitHub 安装后要求“连接 OpRun”，应继续执行 [Skill 随包的 WorkBuddy 接入指引](skills/oprun-project-planning/references/workbuddy.md)，添加连接并启动 OAuth；不要把“Skill 已安装”报告为“已连接”。
+1. 识别当前宿主和已有连接，不向用户追问已能确定的信息。下载同一正式版本的 `install.py`、`manifest.json`、`SHA256SUMS`；从官方仓库 HTTPS 获取并核对脚本摘要后执行，不使用 curl 管道直接运行。
+2. 使用 Python 3.9+：`python3 install.py install --host <宿主>`；更新用 `update`。支持 codex、claude、qveris、workbuddy；无法确定时用 generic。项目目录只在已有明确标记时自动识别；多个标记不猜测。桌面宿主先用其原生安装器导入完整 ZIP；若宿主公开了 Skill 目录，可用 `--target <完整目录>`。不猜测桌面应用内部数据库位置。
+3. 工具校验正式包并保护本地修改，更新保留原目录备份。读取工具输出的客户端配置，使用宿主原生能力导入；同站点连接直接复用。导入受限时只让用户完成一次配置导入。用户要求只读时加 `--readonly` 并在 OAuth 中申请输出的只读 scopes；既有授权不自动扩大。
+4. 用户完成登录授权。运行 `python3 install.py check` 检查公开发现；再由宿主调用 `tools/list`、`oprun_account_context`。发现通过不代表授权成功，不读取项目，不生成方案。`check --target <目录>` 可同时校验已安装文件。
+5. 简短报告“已安装／已更新、已连接”，仅在相应步骤实际成功时使用。等待用户操作时说明具体一步。Qveris 真实客户端验收仍由人工完成，不以脚本测试替代。
 
-**QVeris Studio：** 使用 [专用配置](skills/oprun-project-planning/assets/qveris-mcp.json) 和 [接入指引](skills/oprun-project-planning/references/qveris.md)。不要直接导入通用 `mcp.json`；1.0.22 需要显式指定 OAuth、`/mcp` issuer 和业务 Scope。
+再次更新沿用同一流程，不重建连接、不删除用户配置。工具输出 backup 是恢复目录；需要恢复时先核对现有内容再还原，不能覆盖新的本地修改。早期非托管安装只读比较；内容有差异时先保存、核对，不强行覆盖。
 
-**服务端能力核对：** Skill 可先安装，连接仍以目标站点当前能力为准。先读[多宿主接入指引](skills/oprun-project-planning/references/hosts.md)；没有 `profiles` 时保留宿主原生配置，没有 CIMD 能力声明时保留 DCR。原生回调和受管公共客户端需服务端部署对应修复，不能通过更新 Skill 或手填客户端 ID 启用。
+以下为宿主差异和排错参考，无需逐条展示给用户。
 
-## 1. 检查宿主和现有连接
+## 客户端适配
 
-确认当前宿主支持 Skill、Streamable HTTP MCP、OAuth 与 S256 PKCE；客户端注册默认用动态注册（DCR），其他方式仅在目标站点元数据声明支持时使用，见[多宿主接入指引](skills/oprun-project-planning/references/hosts.md)。读取宿主原生安装方式和现有 `oprun` 配置；URL 相同则复用。已有同名连接指向其他站点或 Skill 存在本地修改时，先说明冲突，不覆盖用户配置。
+| 客户端 | 安装位置与连接方式 |
+| --- | --- |
+| Codex | 当前项目 `.agents/skills/oprun-project-planning`；连接采用本机 CLI 帮助所支持的 MCP OAuth 方式 |
+| Claude Code | 当前项目 `.claude/skills/oprun-project-planning`；使用宿主 MCP OAuth 配置 |
+| Qveris | 原生导入完整 ZIP；导入 [专用配置](skills/oprun-project-planning/assets/qveris-mcp.json)，点击“保存并授权” |
+| WorkBuddy | 原生安装完整 Skill；导入 [专用配置](skills/oprun-project-planning/assets/workbuddy-mcp.json)，点击“连接” |
+| 其他 | 先核实宿主支持 Skill、Streamable HTTP、OAuth S256 PKCE；用原生安装与连接方式 |
 
-默认安装到当前项目；用户要求全局安装时才选择用户范围。权限受限时准备好可执行配置，并说明所需的最小手动操作。不要把某一种宿主的配置格式套用到所有 Agent。
+默认项目范围。全局安装只在用户明确要求时使用宿主文档中的目录。脚本不编辑宿主私有数据库、Token 存储或其他 MCP 配置。仅有 `.agents` 或 `.claude` 标记时可自动识别；桌面客户端及多个标记时由 Agent 根据当前宿主选 `--host`，无需让用户猜路径。
 
-## 2. 安装 Skill
+正式下载入口为 `https://github.com/TeamSillyBees/oprun-skills/releases/latest`。先解析实际标签，所有文件从同一标签下载。`install.py`、ZIP 必须分别通过该版本清单和 SHA256SUMS 校验；摘要证明完整性，可信来源仍是官方仓库 HTTPS。没有 Python 时使用宿主原生 ZIP 安装，并核对完整成员与摘要；不要让用户安装开发环境才能连接。
 
-若本机 `gh skill install --help` 可用，可使用原生安装器。以 Codex 为例，在目标项目的 Git 仓库内执行：
+## 登录和权限
 
-```sh
-gh skill install TeamSillyBees/oprun-skills oprun-project-planning@main --agent codex --scope project
-```
+地址和 OAuth issuer 均为 `https://www.agi.yifx.vip/mcp`。Qveris 必须显式使用 `authMode: oauth`、该 issuer 和配置中的 Scope；不填写 `openid offline_access`。详细差异按需阅读 [Qveris 指引](skills/oprun-project-planning/references/qveris.md)、[WorkBuddy 指引](skills/oprun-project-planning/references/workbuddy.md)及[多宿主指引](skills/oprun-project-planning/references/hosts.md)。
 
-`main` 安装当前源码；需要固定版本时，将它替换为 Releases 中实际存在的标签或核实过的完整提交。其他宿主先从本机帮助确认 `--agent` 值。不要加 `--force` 覆盖已有内容。安装完成后检查宿主能发现 `oprun-project-planning`。[GitHub CLI 安装说明](https://cli.github.com/manual/gh_skill_install)
+用户明确要连接完整功能时采用统一配置；仅查看时采用只读配置。意图不明时在 OAuth 授权页由用户选择，不悄悄扩权。一次连接覆盖当前身份已有的方案、发单、接单及交付能力，无需分别配置。既有只读连接先复用，需要新权限时另行由用户重新授权。
 
-无此命令时，从已发布的 Release 下载 `oprun-project-planning.zip`、`manifest.json` 和 `SHA256SUMS`，验证 ZIP 的 SHA-256 与两份清单一致。ZIP 成员必须与 `manifest.json` 的 `skill_files` 完全一致（同名、同 SHA-256，均位于 `oprun-project-planning/` 下，无绝对路径或 `..`）；核对后完整解压到宿主支持的 Skill 目录。当前版本尚未发布时，从核实过的仓库提交安装完整 Skill 目录。旧包不会启用新增的服务端能力；已连接的 OpRun 也可通过 MCP 资源 `oprun://integration/manifest` 核对线上 Skill 版本。
+登录及授权由用户本人完成，凭据交给宿主保存。不要索取密码、Cookie、Token，不读取其他浏览器登录态，不把授权链接、回调参数写入文件或日志。配置文件不含静态凭据。尚未登录时可完成安装与配置，报告“等待登录授权”。
 
-Codex 项目目录为 `.agents/skills/`。保持目录结构为 `.agents/skills/oprun-project-planning/SKILL.md`。若已存在则先比较，不混合覆盖；完全相同可直接复用。若宿主尚未发现 Skill，按其要求重新加载或打开新会话。[Codex Skill 说明](https://developers.openai.com/codex/skills/)
+## 检查和恢复
 
-## 3. 配置 MCP 并由用户登录
+| 检查结果 | 下一步 |
+| --- | --- |
+| Skill 已安装，宿主未发现 | 按宿主要求重新加载会话 |
+| 公开发现失败 | 检查网络和站点；不能报告已连接或已是最新 |
+| 尚未授权、401 | 使用已有连接的登录授权入口 |
+| 工具未加载 | 检查连接是否启用并刷新；不查询业务数据 |
+| 权限不足 | 根据 account_context 的 required_scopes，在需要该功能时重新授权 |
+| 本地 Skill 有改动 | 保留并核对差异，不使用强制覆盖 |
+| 旧版非托管安装 | 内容与正式包一致时登记版本；不同则先备份、比较，由用户决定保留方式 |
 
-**添加连接前先确认授权范围。** 标准连接一次授权覆盖方案、发单、接单和交付（见下文“授权范围”），涵盖账号各身份已有的项目权限，无需填写项目编号；用户明确只读时只申请 `plan:read match:read delivery:read execution:read settlement:read files:read`。部分宿主（如 Codex）在添加连接时就会开始标准授权，所以要在添加前问清楚。
+安装与更新验证只需 `tools/list` 和 `oprun_account_context`。不自动列出项目、生成方案或执行业务操作。用户已有具体任务时，连接通过后再继续原任务。撤销入口：[授权管理](https://www.agi.yifx.vip/mcp/manage)。
 
-使用宿主的原生 MCP 配置，连接名为 `oprun`，传输方式为远程 HTTP，URL 为 `https://www.agi.yifx.vip/mcp`，认证为 OAuth。[mcp.json](mcp.json) 是常用 HTTP 示例；也可从 [线上配置端点](https://www.agi.yifx.vip/mcp/setup) 获取 `mcp_json`。WorkBuddy 连接器导入使用 [workbuddy-mcp.json](skills/oprun-project-planning/assets/workbuddy-mcp.json)，保存后点击该连接器的“连接”。QVeris Studio 导入 [qveris-mcp.json](skills/oprun-project-planning/assets/qveris-mcp.json)，核对认证方式、授权服务地址和 Scope 后点击“保存并授权”。不同入口的字段遵循宿主帮助，不跨宿主套用命令或配置。
-
-Codex CLI 示例：
-
-```sh
-codex mcp add oprun --url https://www.agi.yifx.vip/mcp --oauth-resource https://www.agi.yifx.vip/mcp
-```
-
-当前 Codex 会在添加连接时开始 OAuth。按终端指引让用户在浏览器中登录并核对授权。如果宿主无法自动打开浏览器，向用户展示宿主生成的登录链接。不要把授权链接、验证码、令牌写入项目文件或公开日志；凭据交给宿主保存。
-
-Codex 添加命令完成标准授权后，无需再执行 `codex mcp login`。用户只要只读时，添加后在授权页取消标准授权，再以只读范围登录：
-
-```sh
-codex mcp login oprun --scopes "plan:read match:read delivery:read execution:read settlement:read files:read"
-```
-
-只有添加时授权未完成（被取消、超时或浏览器未回跳）才再执行 `codex mcp login oprun`。已有授权不会因为安装 Skill 自动扩权。[Codex MCP 说明](https://developers.openai.com/codex/mcp/)
-
-登录需要用户本人操作。不要索取密码或 Token，不从用户其他浏览器提取登录态。用户不在场时可完成安装与配置，明确标记“等待登录授权”。
-
-## 授权范围
-
-标准连接一次授权覆盖方案、发单、接单和交付：`plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit files:read files:write execution:read execution:propose acceptance:propose release:propose funding:propose settlement:read settlement:propose`。每个写操作仍需用户在 OpRun 网页逐次确认。用户可在授权页选择只允许查看；明确只读时直接申请 `plan:read match:read delivery:read execution:read settlement:read files:read`。Qveris 使用[完整配置](skills/oprun-project-planning/assets/qveris-mcp.json)或[只读配置](skills/oprun-project-planning/assets/qveris-readonly-mcp.json)，其他宿主采用相同 Scope，配置格式以宿主为准。工具列表对所有授权相同；按 `oprun_account_context` 的能力和原因判断可做的操作。早期只含方案范围的连接不会自动扩大，需要发单、接单或交付时按[匹配指引](skills/oprun-project-planning/references/matching.md)和[交付指引](skills/oprun-project-planning/references/delivery.md)重新授权，不反复重装 Skill。
-
-## 4. 验证连接
-
-1. 检查宿主已加载 Skill 和 MCP 连接，必要时让用户重新加载会话。
-2. 使用 MCP `tools/list`，确认实际可用工具；只检查配置文件不能证明连接成功。
-3. 调用 `oprun_account_context` 验证真实只读访问，取得本次授权范围与各身份的可用能力。用户只要求接入时，不继续查询项目或读取方案；用户已经提出业务任务时，验证成功后继续原任务。
-4. 依据各身份的 `unavailable_reason` 说明需要完成的操作，其余可用身份仍可使用。若只出现旧版无参数的 `oprun_read_plan`，说明是单项目旧连接，引导重新授权。
-
-安装验收只读取账号上下文。用户随后选择查看项目时再查询列表，需要查看具体方案时再调用 `oprun_read_plan`；修改或生成方案遵循 Skill 的确认和幂等规则。
-
-## 5. 报告结果
-
-登录或验证未完成时，只说明当前状态和下一步。未完成 OAuth 或工具不可调用时，不报告接入成功。需要排查时再补充版本、安装位置和站点。
-
-验证成功后，按 [Skill 的连接收尾规则](skills/oprun-project-planning/SKILL.md) 简短确认连接，并在回复末尾按实际权限给出可用操作，等待用户选择。用户原请求已包含业务任务时，继续原任务并报告结果，不重复询问。接入提示中无需列入这些后续操作。
-
-用户可在 [OpRun 授权管理](https://www.agi.yifx.vip/mcp/manage) 撤销连接。服务端支持刷新时由宿主续期；`invalid_grant` 时重新授权，`invalid_client` 时通过宿主重建此 OpRun 客户端注册再授权。不要删除其他连接。权限变化或旧连接仍限单项目时，使用宿主原生登录流程重新授权。
-
-Skill 来源由 `release.json` 的 `source_repository` 和 `mcp_revision` 固定。独立服务迁移不会改变公网 URL；更新 Skill 不会自动扩权，也不表示服务器已上线。同一连接根据当前身份、资源权限提供能力，文件上传和最终交付按[工序与文件操作](skills/oprun-project-planning/references/workflow.md)办理。
+Skill 正文仍由 oprun-mcp 固定来源同步。本次安装器更新不改变服务器能力，文件内容一致时版本登记可更新，无需反复重新登录。新权限和客户端真实展示验收分别确认，不把脚本校验当成真实客户端验收。

@@ -54,6 +54,12 @@ class SkillPackageTest(unittest.TestCase):
             package.main()
         return output
 
+    def test_installer_is_published_and_checksum_protected(self):
+        output = self.build()
+        self.assertEqual((output / 'install.py').read_bytes(), (self.root / 'tools/install.py').read_bytes())
+        manifest = json.loads((output / 'manifest.json').read_text())
+        self.assertEqual(manifest['files']['install.py'], hashlib.sha256((output / 'install.py').read_bytes()).hexdigest())
+
     def test_installed_bundle_resolves_every_local_reference(self):
         output = self.build()
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:

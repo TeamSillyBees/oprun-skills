@@ -13,7 +13,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL_DIR = "skills/oprun-project-planning"
-FIXED_SOURCES = ("release.json", "INSTALL.md", "mcp.json", "tools/package.py", "tools/sync.py")
+FIXED_SOURCES = ("release.json", "INSTALL.md", "mcp.json", "tools/package.py", "tools/sync.py", "tools/install.py")
 # Host import files are published next to the ZIP so users can import them directly.
 HOST_CONFIG = "assets/*-mcp.json"
 
@@ -78,13 +78,13 @@ def main():
             info.compress_type = zipfile.ZIP_DEFLATED
             archive.writestr(info, contents[f"{SKILL_DIR}/{name}"])
 
-    for name in ("INSTALL.md", "mcp.json"):
+    for name in ("INSTALL.md", "mcp.json", "tools/install.py"):
         data = contents[name]
         if name == "INSTALL.md":
             # The standalone release guide has no repository-relative skills/.
             prefix = f"](https://github.com/{release['repository']}/blob/{revision}/skills/"
             data = data.decode("utf-8").replace("](skills/", prefix).encode("utf-8")
-        (args.output_dir / name).write_bytes(data)
+        (args.output_dir / Path(name).name).write_bytes(data)
     for name in files:
         if fnmatch.fnmatchcase(name, HOST_CONFIG):
             (args.output_dir / Path(name).name).write_bytes(contents[f"{SKILL_DIR}/{name}"])
