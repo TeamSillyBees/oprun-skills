@@ -2,7 +2,7 @@
 
 安装或更新，把这句话发给你的 Agent：
 
-> 请按 https://github.com/TeamSillyBees/oprun-skills/releases/latest/download/INSTALL.md 安装或更新 OpRun，带我完成连接。
+> 请按 https://github.com/TeamSillyBees/oprun-skills/blob/main/INSTALL.md 安装或更新 OpRun，带我完成连接。
 
 [下载安装包](https://github.com/TeamSillyBees/oprun-skills/releases/latest/download/oprun-project-planning.zip) · [安装与排错](INSTALL.md)
 
@@ -42,7 +42,7 @@ Skill 内容的唯一来源是 oprun-mcp 仓库的 `skills/oprun-project-plannin
    python3 tools/package.py --output-dir dist/v<版本>
    ```
 
-发布资产时先创建绑定完整提交的空草稿，再运行 `python3 tools/upload_assets.py --directory dist/v<版本> --tag v<版本>`；核对下载后再正式发布。安装说明以 `text/plain` 上传，避免网页工具拒绝二进制附件；不覆盖既有正式资产。
+发布资产时先创建绑定完整提交的空草稿，再运行 `python3 tools/upload_assets.py --directory dist/v<版本> --tag v<版本>`；核对下载后再正式发布。安装说明以 `text/plain` 上传，但 GitHub 下载层仍可能返回二进制类型；一句话接入使用仓库网页说明，下载入口仅供包管理工具使用。不覆盖既有正式资产。
 
 输出可复现的 ZIP、安装指南、安装工具 `install.py`、通用及各宿主 MCP 配置（Skill 中的 `assets/*-mcp.json`）、`manifest.json` 与 `SHA256SUMS`。ZIP 即同步来的完整 Skill 目录；清单的 `skill_files` 列出每个成员的校验值，`mcp_revision` 是 Skill 来源提交，不代表线上当前版本。为新版本使用新的输出目录和版本标签；源码更新与 Release 发布分开执行，不覆盖旧资产。
 

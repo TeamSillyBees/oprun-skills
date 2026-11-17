@@ -1,6 +1,6 @@
 # 安装或更新 OpRun
 
-用户说“安装 OpRun”或“更新 OpRun”时，执行以下简短流程。默认使用最新正式 Release，不用移动的 main 作为安装版本。
+用户说“安装 OpRun”或“更新 OpRun”时，执行以下简短流程。阅读入口为 https://github.com/TeamSillyBees/oprun-skills/blob/main/INSTALL.md，使用网页读取工具时不要访问 Release 附件下载地址，GitHub 可能将其强制作为二进制附件返回。默认使用最新正式 Release，不用移动的 main 作为安装版本。
 
 1. 先核对当前会话能用的工具和已有连接。Qveris 中连接已保存不等于在本会话启用：在输入框“本对话已启用”中勾选 oprun；工具缺失时只检查一次，不反复用全局研究工具搜索代替。没有下载、文件写入或命令执行能力时，不尝试用研究工具安装软件，直接使用原生 Skill 导入。不要因为界面显示“任务工具离线”就推断 MCP 不可用，独立验证连接。识别当前宿主，不向用户追问已能确定的信息。下载同一正式版本的 `install.py`、`manifest.json`、`SHA256SUMS`；从官方仓库 HTTPS 获取并核对脚本摘要后执行，不使用 curl 管道直接运行。
 2. 使用 Python 3.9+：`python3 install.py install --host <宿主>`；更新用 `update`。支持 codex、claude、qveris、workbuddy；无法确定时用 generic。项目目录只在已有明确标记时自动识别；多个标记不猜测。桌面宿主先用其原生安装器导入完整 ZIP；若宿主公开了 Skill 目录，可用 `--target <完整目录>`。不猜测桌面应用内部数据库位置。

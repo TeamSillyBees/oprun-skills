@@ -16,7 +16,7 @@ class UploadTest(unittest.TestCase):
   (self.p/'manifest.json').write_text(json.dumps({'repository':u.REPO,'tag':'v1.3.1','revision':'a'*40,'files':hashes}))
   hashes={**hashes,'manifest.json':hashlib.sha256((self.p/'manifest.json').read_bytes()).hexdigest()}
   (self.p/'SHA256SUMS').write_text(''.join(f'{h}  {n}\n' for n,h in hashes.items()))
- def test_web_fetchable_upload_and_no_overwrite(self):
+ def test_document_upload_type_and_no_overwrite(self):
   r={'databaseId':12,'isDraft':True,'assets':[],'targetCommitish':'a'*40}
   with patch.object(u.subprocess,'check_output',return_value=json.dumps(r).encode()),patch.object(u.subprocess,'run') as run:
    u.upload(self.p,'v1.3.1')
