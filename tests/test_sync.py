@@ -42,7 +42,7 @@ class SkillSyncTest(unittest.TestCase):
         self.main = git(self.oprun, "rev-parse", "HEAD")
         # Synthetic distribution repository with a stale, hand-edited Skill.
         self.dist = base / "dist"
-        self.write(self.dist / "release.json", json.dumps({"version": "1.0.0", "oprun_revision": "0" * 40}, indent=2) + "\n")
+        self.write(self.dist / "release.json", json.dumps({"version": "1.0.0", "mcp_revision": "0" * 40}, indent=2) + "\n")
         self.write(self.dist / "skills/oprun-project-planning/SKILL.md", "stale\n")
         self.write(self.dist / "skills/oprun-project-planning/references/old.md", "removed upstream\n")
         git(self.dist, "init", "--quiet")
@@ -54,7 +54,7 @@ class SkillSyncTest(unittest.TestCase):
         path.write_bytes(text.encode())
 
     def run_sync(self, *args):
-        with patch.object(sync, "ROOT", self.dist), patch("sys.argv", ["sync.py", "--oprun", str(self.oprun), *args]), \
+        with patch.object(sync, "ROOT", self.dist), patch("sys.argv", ["sync.py", "--oprun-mcp", str(self.oprun), *args]), \
                 contextlib.redirect_stdout(io.StringIO()):
             sync.main()
 
@@ -68,7 +68,7 @@ class SkillSyncTest(unittest.TestCase):
                                         "references/guide.md": b"Synthetic guide\n"})
         self.assertFalse((self.dist / "skills/oprun-project-planning/references/old.md").exists())
         release = json.loads((self.dist / "release.json").read_text(encoding="utf-8"))
-        self.assertEqual(release, {"version": "1.0.0", "oprun_revision": self.main})
+        self.assertEqual(release, {"version": "1.0.0", "mcp_revision": self.main, "source_repository": "TeamSillyBees/oprun-mcp", "source_merge_status": "merged"})
         self.run_sync("--check")
 
     def test_check_reports_hand_edits_and_extra_files(self):

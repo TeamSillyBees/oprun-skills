@@ -4,7 +4,7 @@
 
 ## 选择配置
 
-默认使用[完整配置](../assets/qveris-mcp.json)：一个连接覆盖方案、发单、接单和交付，每个写操作仍需在 OpRun 网页逐次确认。用户只要求查看时使用[只读配置](../assets/qveris-readonly-mcp.json)。两个账号（例如发单和接单各一个）各建一条连接，用宿主能隔离的连接或独立工作区，不用提示词切换账号。
+默认使用[完整配置](../assets/qveris-mcp.json)：一个连接覆盖方案、发单、接单及工序履约，每个写操作仍需在 OpRun 网页逐次确认。用户只要求查看时使用[只读配置](../assets/qveris-readonly-mcp.json)。两个账号（例如发单和接单各一个）各建一条连接，用宿主能隔离的连接或独立工作区，不用提示词切换账号。
 
 ## 配置并登录
 
@@ -19,7 +19,7 @@
 | Server URL | `https://www.agi.yifx.vip/mcp` |
 | 认证方式 | OAuth 登录授权 |
 | OAuth 授权服务地址 | `https://www.agi.yifx.vip/mcp` |
-| Scopes | `plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit`（只读配置为 `plan:read match:read delivery:read`） |
+| Scopes | `plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit files:read files:write execution:read execution:propose acceptance:propose release:propose funding:propose settlement:read settlement:propose`（只读配置为 `plan:read match:read delivery:read files:read execution:read settlement:read`） |
 
 用户只要求只读或已有只读连接时，使用只读配置，不要因导入配置扩大授权。用户指定其他 OpRun 站点时，同步替换 URL 和 issuer，并通过该站点的 [MCP 资源元数据](https://www.agi.yifx.vip/.well-known/oauth-protected-resource/mcp) 核对实际授权服务器；不要混用不同环境。
 
@@ -57,3 +57,5 @@
 显式配置后仍失败时，区分发现、注册、授权、回跳、换码、MCP 调用六个阶段，提供不含秘密的错误信息。只返回 401 的情况不能证明已经完成授权。不要通过关闭服务端鉴权或共享静态令牌解决连接问题。
 
 本页维护接入配置与排错步骤，不改变 OpRun 服务端或 Qveris 客户端代码。其他宿主见[多宿主指引](hosts.md)。
+
+全流程扩展见[文件与工序操作](workflow.md)。接入前核对实际服务端能力；本地 Skill 更新不表示这些工具已上线。旧连接需要用户重新授权新增 scope，不能自动扩大原授权。
