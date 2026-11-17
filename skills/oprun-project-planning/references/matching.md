@@ -1,20 +1,19 @@
 # 接单与发单匹配
 
-按用户当前任务选择授权，不按登录角色自动扩大范围。Scope 只开放工具，项目归属、邀请归属、身份认证和业务状态仍由 OpRun 校验。工具以当前 `tools/list` 为准；代码或说明中存在工具，不代表当前连接已获授权或目标站点已上线。
+一个 OpRun 连接覆盖方案、发单和接单。Scope 只决定连接能发起哪些操作；项目归属、邀请归属、身份认证和业务状态每次调用都由 OpRun 重新校验，每个写操作仍需用户在 OpRun 网页逐次确认。
 
-## 选择能力与恢复连接
+## 检查能力与恢复连接
 
-| 场景 | Scope | Qveris 配置 |
-| --- | --- | --- |
-| 方案生成和修改，不接单或发布 | `plan:read plan:propose plan:generate` | [方案配置](../assets/qveris-mcp.json) |
-| 查看项目、邀请，接受或拒绝接单意向 | `plan:read match:read match:propose` | [接单配置](../assets/qveris-worker-mcp.json) |
-| 生成方案、确认发布、邀请并选定接单人 | `plan:read plan:generate plan:publish match:read match:propose` | [发单配置](../assets/qveris-publisher-mcp.json) |
+标准连接申请全部 8 项：`plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit`。不在配置里写 Scope 的宿主会得到同样的完整申请；用户可在 OpRun 授权页选择“只允许查看项目、匹配和交付进度”，此时只授予 `plan:read match:read delivery:read`。QVeris 必须在配置里写明 Scope，使用[完整配置](../assets/qveris-mcp.json)或[只读配置](../assets/qveris-readonly-mcp.json)。
 
-只查邀请和匹配状态可仅申请 `match:read`；纯接单操作最少需要 `match:read match:propose`。接单模板增加 `plan:read` 以保留身份和项目浏览。发单模板不包含修改已有方案的 `plan:propose`，用户确实需要时再申请。
+工具列表对所有授权都相同，不要用“工具是否存在”判断能力。开始前调用 `oprun_account_context`：
 
-已有连接切换场景时先比较原 Scope：新增能力需用户重新确认，已有且仍需使用的能力保留。若保留原三项方案能力并增加接单，将 Scope 设为 `plan:read plan:propose plan:generate match:read match:propose`。不要静默缩小、扩大或覆盖另一账号的连接；两个账号使用宿主可隔离的连接或独立工作区，不用提示词代替身份切换。
+- `server_features` 含 `stable_tool_list` 和 `capability_reasons` 时，按各身份的 `capabilities` 选择操作；不含时说明目标站点较旧，按实际工具和返回错误处理。
+- 每项能力给出 `allowed` 和 `reason`：`scope_missing` 需重新授权；`ai_consent_required` 需在 OpRun 确认该身份的 AI 服务授权；`subject_not_worker` 表示该身份没有接单收件箱，换用 `kind` 为 `worker` 的身份；`not_supported` 表示站点暂不提供。提交交付见[交付指引](delivery.md)。`checked_on_use` 为 true 的能力还要在调用时核对项目权限和业务状态。
+- `missing_scopes` 非空表示此连接不是完整授权。用户需要缺少的功能时，引导在宿主中重新授权 OpRun 连接；刷新工具、刷新令牌、重装 Skill 都不会扩大旧授权。
+- `default_subject_id` 只在恰好一个可用身份时返回。多个身份时按项目归属和用户意图选择，存在歧义再询问；写操作始终显式传 `subject_id`，换身份后重新读取项目，不沿用另一身份的上下文。
 
-当 `oprun_account_context.scopes` 没有 `match:read`／`match:propose` 时，对应匹配工具不会出现在列表，能力标志也会为 false。修改 Qveris 的 Scope 后必须“保存并授权”或“重新授权”，再“验证并刷新”并重载对话中的连接器。刷新工具、刷新旧令牌、重装 Skill 都不会扩大旧授权。已授权但仍为 false 时，检查当前身份的 `unavailable_reason`；不要直接改写能力标志或绕过业务门禁。
+调用返回 `insufficient_scope` 时，结果里的 `required_scopes` 是任一可启用该工具的授权，`next_action` 为 `reauthorize`。告诉用户需要重新授权的功能，不要重试，也不要说成“没有邀请”或“没有项目”。
 
 | 工具 | 授权 |
 | --- | --- |
@@ -23,7 +22,7 @@
 | `oprun_prepare_publication` | `plan:publish` |
 | `oprun_action_status`、`oprun_execute_action` | `match:propose` 或 `plan:publish`，只能处理本连接有权访问的操作 |
 
-如果补齐授权并刷新后工具仍缺失，记录无秘密的 Scope、工具名、错误码和 request_id，核对目标站点版本与 `/mcp/setup`；不得把“工具不存在”当作没有邀请或没有项目。
+常见拒绝原因：`subject_not_worker`（该身份没有收件箱）、`project_unavailable`（当前身份看不到该项目）、`project_permission_required`（只有发单方或项目管理者能邀请、选定或撤回）、`invitation_not_owned`（邀请不是发给当前身份的）、`invitation_state_changed` 和 `version_conflict`（重新读取后再准备）、`candidate_unavailable`（重新读取候选）。记录无秘密的错误码和 `request_id`，不要把拒绝说成没有数据。
 
 ## 接单
 

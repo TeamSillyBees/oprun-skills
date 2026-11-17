@@ -30,7 +30,7 @@ Codex 项目目录为 `.agents/skills/`。保持目录结构为 `.agents/skills/
 
 ## 3. 配置 MCP 并由用户登录
 
-**添加连接前先确认授权范围。** 方案连接申请 `plan:read`、`plan:propose`、`plan:generate`，涵盖账号各身份已有的项目权限，无需填写项目编号；用户明确只读时只申请 `plan:read`；接单或发单按[匹配指引](skills/oprun-project-planning/references/matching.md)选择范围。部分宿主（如 Codex）在添加连接时就会开始标准授权，所以要在添加前问清楚。
+**添加连接前先确认授权范围。** 标准连接一次授权覆盖方案、发单、接单和交付（见下文“授权范围”），涵盖账号各身份已有的项目权限，无需填写项目编号；用户明确只读时只申请 `plan:read match:read delivery:read`。部分宿主（如 Codex）在添加连接时就会开始标准授权，所以要在添加前问清楚。
 
 使用宿主的原生 MCP 配置，连接名为 `oprun`，传输方式为远程 HTTP，URL 为 `https://www.agi.yifx.vip/mcp`，认证为 OAuth。[mcp.json](mcp.json) 是常用 HTTP 示例；也可从 [线上配置端点](https://www.agi.yifx.vip/mcp/setup) 获取 `mcp_json`。WorkBuddy 连接器导入使用 [workbuddy-mcp.json](skills/oprun-project-planning/assets/workbuddy-mcp.json)，保存后点击该连接器的“连接”。QVeris Studio 导入 [qveris-mcp.json](skills/oprun-project-planning/assets/qveris-mcp.json)，核对认证方式、授权服务地址和 Scope 后点击“保存并授权”。不同入口的字段遵循宿主帮助，不跨宿主套用命令或配置。
 
@@ -45,16 +45,16 @@ codex mcp add oprun --url https://www.agi.yifx.vip/mcp --oauth-resource https://
 Codex 添加命令完成标准授权后，无需再执行 `codex mcp login`。用户只要只读时，添加后在授权页取消标准授权，再以只读范围登录：
 
 ```sh
-codex mcp login oprun --scopes plan:read
+codex mcp login oprun --scopes "plan:read match:read delivery:read"
 ```
 
 只有添加时授权未完成（被取消、超时或浏览器未回跳）才再执行 `codex mcp login oprun`。已有授权不会因为安装 Skill 自动扩权。[Codex MCP 说明](https://developers.openai.com/codex/mcp/)
 
 登录需要用户本人操作。不要索取密码或 Token，不从用户其他浏览器提取登录态。用户不在场时可完成安装与配置，明确标记“等待登录授权”。
 
-## 接单与发单授权
+## 授权范围
 
-Qveris 按任务选择：[方案配置](skills/oprun-project-planning/assets/qveris-mcp.json)、[接单配置](skills/oprun-project-planning/assets/qveris-worker-mcp.json)、[发单配置](skills/oprun-project-planning/assets/qveris-publisher-mcp.json)。其他宿主采用相同 Scope，配置格式仍以宿主为准。默认方案授权没有匹配工具；按[匹配操作指引](skills/oprun-project-planning/references/matching.md)核对能力并重新授权，不反复重装 Skill。已有且仍需要的能力保留。
+标准连接一次授权覆盖方案、发单、接单和交付：`plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit`。每个写操作仍需用户在 OpRun 网页逐次确认。用户可在授权页选择只允许查看；明确只读时直接申请 `plan:read match:read delivery:read`。Qveris 使用[完整配置](skills/oprun-project-planning/assets/qveris-mcp.json)或[只读配置](skills/oprun-project-planning/assets/qveris-readonly-mcp.json)，其他宿主采用相同 Scope，配置格式以宿主为准。工具列表对所有授权相同；按 `oprun_account_context` 的能力和原因判断可做的操作。早期只含方案范围的连接不会自动扩大，需要发单、接单或交付时按[匹配指引](skills/oprun-project-planning/references/matching.md)和[交付指引](skills/oprun-project-planning/references/delivery.md)重新授权，不反复重装 Skill。
 
 ## 4. 验证连接
 
