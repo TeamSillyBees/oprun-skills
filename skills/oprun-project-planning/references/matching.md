@@ -68,3 +68,13 @@
 - 安装及连接检查只调用工具列表和账号上下文。真实接受、拒绝、选定、撤回及发布会改变业务数据，须在用户实际任务或明确授权的隔离验收范围内执行。
 
 协议与权限规则以 OpRun 仓库 ADR 0056 为准；本页与服务端同仓维护，所装版本与线上版本的核对方法见[更新与兼容](updates.md)。Skill 不修改服务端、权限或账本；本地验证不等于真实接单闭环已验收。
+
+## 生成前的身份与费用核对
+
+用户说“为某企业发单、让某人接单”时，发单方和接单方是不同角色。先用 account_context 的 subjects 匹配用户指定的发单方；不能因为当前只有 worker 就把接单人当发单方。名称不明确时只追问身份，指定发单方不在列表时请用户用该主体登录，不先调用模型。个人也可发单，不按 worker 类型一律拒绝。
+
+调用 generate_plan、supplement_plan、prepare_publication 时带 planning_intent：publisher_subject_id 和 quota_subject_id 均为选定的 subject_id，publisher_label 原样取其 name。向用户简短说明本次由该身份发单并消耗其模型额度；已有明确指示可沿用。已知接单身份时可填 recipient_subject_id，但不能与发单身份相同。这个对象是意图约束，不是用户签署凭据，发布仍需网页确认。
+
+切换发单身份不能读取或搬迁原身份的私有任务、额度和账单。可保留用户自己提供的需求；如需复用方案，先确认资料共享权限，再走已有外部方案导入和估价流程，不冒充零费用迁移。
+
+生成失败或响应丢失时保存 task_id、version、request_key，先查 plan_result/recent_operations；同一请求键只恢复原结果，不换键反复调用。按 failure 的 reason 和 next_step 处理。终态失败后只有用户决定再次生成才新建请求；真实模型调用可能产生费用，不承诺失败免费。无服务端 failure 字段的旧版本只查询原状态并报告错误码。

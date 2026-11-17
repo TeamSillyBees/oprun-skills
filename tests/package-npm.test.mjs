@@ -7,10 +7,14 @@ import {execFileSync, spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {SKILL, loadBundle, treeHashes} from '../cli/core.mjs';
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-function fixture(t) {
+function fixture(t, mergeStatus = "merged") {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'oprun-pack-test-'));
   t.after(() => fs.rmSync(root, {recursive: true, force: true}));
   for (const name of ['package.json','release.json','README.md','INSTALL.md','mcp.json','cli','skills','tools']) fs.cpSync(path.join(ROOT,name),path.join(root,name),{recursive:true});
+  // Test a synthetic reviewed release independently from the PR's real source status.
+  const metadata=JSON.parse(fs.readFileSync(path.join(root,'release.json')));
+  metadata.source_merge_status=mergeStatus;
+  fs.writeFileSync(path.join(root,'release.json'),JSON.stringify(metadata,null,2)+'\n');
   const git = (...args) => execFileSync('git', args, {cwd:root, stdio:['ignore','pipe','pipe']}).toString().trim();
   git('init','--quiet');git('add','.');git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','-c','commit.gpgsign=false','commit','-qm','Synthetic package');
   git('update-ref','refs/remotes/origin/main','HEAD');
@@ -57,4 +61,12 @@ test('npm builder rejects dirty inputs, mismatched versions, unpushed commits an
   assert.notEqual(run('tagged','--allow-unpushed').status,0);
   const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json')));pkg.version='9.0.0';fs.writeFileSync(path.join(root,'package.json'),JSON.stringify(pkg));git('add','package.json');git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','-c','commit.gpgsign=false','commit','-qm','Mismatch');
   assert.notEqual(run('mismatch','--allow-unpushed').status,0);
+});
+
+test('pending canonical source cannot create a formal package', t=>{
+ const {root}=fixture(t,'pending');
+ const run=(extra=[])=>spawnSync(process.execPath,['tools/package-npm.mjs','--output-dir','candidate',...extra],{cwd:root,encoding:'utf8'});
+ const formal=run();assert.notEqual(formal.status,0);assert.match(formal.stderr,/source has not merged/);assert.equal(fs.existsSync(path.join(root,'candidate')),false);
+ assert.equal(run(['--allow-unpushed']).status,0);
+ assert.equal(JSON.parse(fs.readFileSync(path.join(root,'candidate/release.json'))).source_merge_status,'pending');
 });
