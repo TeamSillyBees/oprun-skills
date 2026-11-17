@@ -28,3 +28,11 @@
 - 固定 Skill 来源同步检查、文档链接检查、敏感信息扫描和 diff 格式检查通过。
 - 未新增仅匹配文案的测试；未运行 OpRun 业务测试，未重复操作用户 Qveris 窗口。
 - 本次是指引发布，“自动引导”由宿主 Agent 读取执行；无法代替宿主原生导入、用户 OAuth 或 2FA。
+
+## GitHub 发布后验
+
+- 固定制品提交：`76baadfd72ee254713bab68b27d6af678661d3d3`；GitHub v1.4.1 的 10 个资产已下载，逐字节及 SHA-256 核验通过。
+- 使用正式 GitHub npm 包，从隔离的 v1.4.0 安装更新到 v1.4.1，通过 doctor 公开发现检查；已有合成 MCP 配置逐字节保留。
+- Qveris 命令分支返回同版本 ZIP 下载地址和 `awaiting_host_import`，没有写连接配置或声称已导入。这是 CLI 制品验证，不是 Qveris 界面验收。
+- ZIP 与 v1.4.0 完全相同，已有 Skill 正文无需重新导入；新的安装与更新指引由 main 网页及 v1.4.1 INSTALL.md 提供。
+- GitHub 发布完成；npm v1.4.1 已暂存，当前仍待维护者 2FA。此时 npm latest 仍为 v1.4.0，不将暂存称为注册表发布成功。
