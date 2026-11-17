@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Copy the reviewed Skill from an OpRun main commit; never edit skills/ by hand.
+"""Distribute the reviewed Skill from a fixed oprun-mcp commit.
 
-The OpRun repository (integrations/agent-skills/oprun-project-planning) is the
-only source. This repository distributes an exact snapshot of it and records
-the source commit as release.json "oprun_revision".
+The standalone service owns Skill source; this repository is a verified mirror.
 """
 
 import argparse
@@ -13,7 +11,7 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_DIR = "integrations/agent-skills/oprun-project-planning"
+SOURCE_DIR = "skills/oprun-project-planning"
 TARGET_DIR = "skills/oprun-project-planning"
 
 
@@ -56,31 +54,31 @@ def drift(target, entries):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--oprun", type=Path, required=True, help="local clone of TeamSillyBees/oprun")
-    parser.add_argument("--ref", default="origin/main", help="OpRun commit to copy (default: origin/main)")
+    parser.add_argument("--oprun-mcp", type=Path, required=True, dest="oprun", help="local clone of TeamSillyBees/oprun-mcp")
+    parser.add_argument("--ref", default="origin/main", help="oprun-mcp commit to copy (default: origin/main)")
     parser.add_argument("--check", action="store_true",
                         help="verify skills/ equals the commit recorded in release.json; change nothing")
     parser.add_argument("--allow-unmerged", action="store_true",
-                        help="permit a commit not on OpRun origin/main (local trials only, never release)")
+                        help="permit a commit not on oprun-mcp origin/main (local trials only, never release)")
     args = parser.parse_args()
     release_path = ROOT / "release.json"
     release = json.loads(release_path.read_text(encoding="utf-8"))
     target = ROOT / TARGET_DIR
 
-    ref = release["oprun_revision"] if args.check else args.ref
+    ref = release["mcp_revision"] if args.check else args.ref
     commit = run(args.oprun, "rev-parse", "--verify", f"{ref}^{{commit}}").strip()
     entries = source_tree(args.oprun, commit)
     if args.check:
         problems = drift(target, entries)
         if problems:
-            raise SystemExit(f"{TARGET_DIR} differs from OpRun {commit}:\n  " + "\n  ".join(problems)
+            raise SystemExit(f"{TARGET_DIR} differs from oprun-mcp {commit}:\n  " + "\n  ".join(problems)
                              + "\nRun tools/sync.py instead of editing skills/ directly.")
-        print(f"{TARGET_DIR} matches OpRun {commit}")
+        print(f"{TARGET_DIR} matches oprun-mcp {commit}")
         return
 
     merged = subprocess.run(["git", "merge-base", "--is-ancestor", commit, "origin/main"], cwd=args.oprun)
     if merged.returncode != 0 and not args.allow_unmerged:
-        raise SystemExit(f"{commit} is not on OpRun origin/main; fetch it or merge the Skill change first")
+        raise SystemExit(f"{commit} is not on oprun-mcp origin/main; fetch it or merge the Skill change first")
 
     for name, path in local_files(target).items():
         if name not in entries:
@@ -93,9 +91,12 @@ def main():
         if not any(directory.iterdir()):
             directory.rmdir()
 
-    release["oprun_revision"] = commit
+    release.pop("oprun_revision", None)
+    release["mcp_revision"] = commit
+    release["source_repository"] = "TeamSillyBees/oprun-mcp"
+    release["source_merge_status"] = "merged" if merged.returncode == 0 else "pending"
     release_path.write_bytes((json.dumps(release, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
-    print(f"Synced {len(entries)} files from OpRun {commit}; review the diff, then bump release.json version")
+    print(f"Synced {len(entries)} files from oprun-mcp {commit}; review the diff, then bump release.json version")
 
 
 if __name__ == "__main__":

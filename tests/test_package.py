@@ -33,6 +33,11 @@ class SkillPackageTest(unittest.TestCase):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes((ROOT / name).read_bytes())
+        # Package fixture represents a reviewed upstream commit; test pending
+        # source behavior separately instead of inheriting this checkout state.
+        release_path=self.root/"release.json"
+        release=json.loads(release_path.read_text());release["source_merge_status"]="merged"
+        release_path.write_text(json.dumps(release,indent=2)+"\n")
         self.git("init", "--quiet")
         self.git("add", "--", *self.sources)
         self.git("-c", "user.name=Package Test", "-c", "user.email=package@example.invalid",
@@ -81,7 +86,9 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual(server["url"], server["issuer"])
         self.assertEqual(server["scope"].split(), [
             "plan:read", "plan:propose", "plan:generate", "plan:publish",
-            "match:read", "match:propose", "delivery:read", "delivery:submit"])
+            "match:read", "match:propose", "delivery:read", "delivery:submit",
+            "files:read", "files:write", "execution:read", "execution:propose",
+            "acceptance:propose", "release:propose", "funding:propose", "settlement:read", "settlement:propose"])
         self.assertEqual(set(server), {"type", "url", "authMode", "issuer", "scope"})
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:
             self.assertEqual(archive.read("oprun-project-planning/assets/qveris-mcp.json"),
@@ -89,7 +96,7 @@ class SkillPackageTest(unittest.TestCase):
 
     def test_readonly_profile_preserves_oauth_and_only_reads(self):
         output = self.build()
-        expected = {"qveris-readonly-mcp.json": {"plan:read", "match:read", "delivery:read"}}
+        expected = {"qveris-readonly-mcp.json": {"plan:read", "match:read", "delivery:read", "files:read", "execution:read", "settlement:read"}}
         self.assertFalse((output / "qveris-worker-mcp.json").exists())
         self.assertFalse((output / "qveris-publisher-mcp.json").exists())
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:
@@ -215,6 +222,16 @@ class SkillPackageTest(unittest.TestCase):
         self.git("update-ref", "refs/remotes/origin/main", "HEAD")
         with self.assertRaises(SystemExit):
             self.build()
+
+
+    def test_pending_upstream_requires_explicit_trial(self):
+        p=self.root/"release.json";v=json.loads(p.read_text());v["source_merge_status"]="pending";p.write_text(json.dumps(v)+"\n")
+        self.git("add","release.json")
+        self.git("-c","user.name=Package Test","-c","user.email=package@example.invalid","-c","commit.gpgsign=false","commit","--quiet","-m","Pending synthetic source")
+        self.git("update-ref","refs/remotes/origin/main","HEAD")
+        with self.assertRaisesRegex(SystemExit,"pending review"):
+            self.build()
+        self.build("trial","--allow-unpushed")
 
 
 if __name__ == "__main__":
