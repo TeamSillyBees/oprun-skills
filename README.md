@@ -14,7 +14,7 @@ QVeris Studio 使用 [专用接入指引](skills/oprun-project-planning/referenc
 
 多宿主配置与新旧服务端兼容方式见[多宿主接入指引](skills/oprun-project-planning/references/hosts.md)。Skill 可以先更新；WorkBuddy 原生回调、受管公共客户端和 CIMD 仍取决于目标服务端是否支持并启用。
 
-新增文件上传、开工、验收、放行和系统内结算能力见[履约指引](skills/oprun-project-planning/references/workflow.md)。**这些能力取决于目标 OpRun 服务端版本**；本分支对应的服务端 PR 尚未合并或部署，不代表线上已经开放。旧连接须由用户重新授权新增范围；Skill 不会自动扩权。
+新增文件上传、开工、验收、放行和系统内结算能力见[履约指引](skills/oprun-project-planning/references/workflow.md)。**这些能力取决于目标 OpRun 服务端版本**；对应服务端代码已合入 OpRun `main`（[PR #186](https://github.com/TeamSillyBees/oprun/pull/186)），本轮未部署；接入时仍须检查目标服务端实际暴露的工具和账号能力。旧连接须由用户重新授权新增范围；Skill 不会自动扩权。
 
 ## 手动安装
 
