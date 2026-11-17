@@ -2,7 +2,9 @@
 
 安装或更新，把这句话发给你的 Agent：
 
-> 请按 https://github.com/TeamSillyBees/oprun-skills/blob/main/INSTALL.md 安装或更新 OpRun，带我完成连接。
+> 请按 https://github.com/TeamSillyBees/oprun-skills/blob/main/INSTALL.md 安装或更新 OpRun，根据当前客户端能力选择命令安装或 ZIP 导入，保留已有配置，并检查连接。
+
+Agent 会先检查当前会话能力：能执行命令且已有 Node.js 22+ 时使用 npm/npx；否则直接给出 ZIP 下载链接和客户端导入步骤，不要求安装开发环境。更新复用已有 MCP 连接；需要手动导入时明确提示“等待导入确认”。
 
 有 Node.js 22+ 的命令行客户端可直接运行：
 
