@@ -23,3 +23,11 @@
 ## 恢复
 
 更新输出 backup 路径，目录位于 Skill 扫描目录之外。恢复前核对旧备份的 `.oprun-install.json` 和逐文件摘要，再保存当前目录并还原；不得覆盖后续本地修改。旧 ZIP Release 和 Python 安装入口保留。
+
+## 发布后核验
+
+- 制品提交：`82c868868f75f99c86b10b5164059de3002348bc`。
+- [GitHub v1.4.0](https://github.com/TeamSillyBees/oprun-skills/releases/tag/v1.4.0) 的 10 个资产已全部下载，逐字节及 SHA-256 与本地制品一致。
+- [npm oprun-skills 1.4.0](https://www.npmjs.com/package/oprun-skills/v/1.4.0) 正式可下载，latest 指向 1.4.0；下载 tarball 与 GitHub 和本地制品逐字节一致。
+- 使用全新缓存、隔离项目分别从 GitHub 和 npm 执行 npx 安装、重复更新和 doctor 均通过。全部 Skill 文件与 ZIP 清单一致，公开发现通过，OAuth 与工具状态仍如实保留为未检查。
+- 发布初次受 npm 2FA 限制，维护者完成发布后已核验正式版本；未绕过认证、未修改业务服务。
