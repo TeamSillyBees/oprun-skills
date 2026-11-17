@@ -81,7 +81,8 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual(server["url"], server["issuer"])
         self.assertEqual(server["scope"].split(), [
             "plan:read", "plan:propose", "plan:generate", "plan:publish",
-            "match:read", "match:propose", "delivery:read", "delivery:submit"])
+            "match:read", "match:propose", "delivery:read", "delivery:submit",
+            "files:read", "files:write", "execution:read", "execution:propose", "acceptance:propose", "release:propose", "funding:propose", "settlement:read", "settlement:propose"])
         self.assertEqual(set(server), {"type", "url", "authMode", "issuer", "scope"})
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:
             self.assertEqual(archive.read("oprun-project-planning/assets/qveris-mcp.json"),
@@ -89,7 +90,7 @@ class SkillPackageTest(unittest.TestCase):
 
     def test_readonly_profile_preserves_oauth_and_only_reads(self):
         output = self.build()
-        expected = {"qveris-readonly-mcp.json": {"plan:read", "match:read", "delivery:read"}}
+        expected = {"qveris-readonly-mcp.json": {"plan:read", "match:read", "delivery:read", "files:read", "execution:read", "settlement:read"}}
         self.assertFalse((output / "qveris-worker-mcp.json").exists())
         self.assertFalse((output / "qveris-publisher-mcp.json").exists())
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:

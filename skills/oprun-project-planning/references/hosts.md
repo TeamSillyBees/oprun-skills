@@ -42,13 +42,13 @@ Codex：
 codex mcp add oprun --url https://www.agi.yifx.vip/mcp --oauth-resource https://www.agi.yifx.vip/mcp
 ```
 
-Codex 添加时即开始授权。不指定范围时申请全部功能，用户可在 OpRun 授权页选择“只允许查看”。只有该次授权未完成才执行 `codex mcp login oprun`；也可用 `codex mcp login oprun --scopes "plan:read match:read delivery:read"` 直接申请只读。
+Codex 添加时即开始授权。不指定范围时申请全部功能，用户可在 OpRun 授权页选择“只允许查看”。只有该次授权未完成才执行 `codex mcp login oprun`；也可用 `codex mcp login oprun --scopes "plan:read match:read delivery:read files:read execution:read settlement:read"` 直接申请只读。
 
-宿主不能在配置里指定范围时，授权页的“只允许查看项目、匹配和交付进度”会把连接收窄为 `plan:read match:read delivery:read`。添加命令成功仅说明配置已保存，继续完成浏览器授权，并调用 `oprun_account_context` 才能确认连接。
+宿主不能在配置里指定范围时，授权页的“只允许查看”会把连接收窄为 `plan:read match:read delivery:read files:read execution:read settlement:read`。添加命令成功仅说明配置已保存，继续完成浏览器授权，并调用 `oprun_account_context` 才能确认连接。
 
 ## 接单与发单能力
 
-标准连接一次授权覆盖方案、发单、接单和交付；工具列表对所有授权都相同。早期只申请方案范围的旧连接不会自动扩大，需要发单或接单时重新授权，详见[匹配指引](matching.md)。不要为此更改账号权限。
+标准连接一次授权覆盖方案、发单、接单及工序履约；工具列表对所有授权都相同。早期只申请方案范围的旧连接不会自动扩大，需要发单或接单时重新授权，详见[匹配指引](matching.md)。不要为此更改账号权限。
 
 ## 方案展示
 
@@ -103,3 +103,5 @@ Codex 添加时即开始授权。不指定范围时申请全部功能，用户�
 - [WorkBuddy 云连接器规范](https://open.workbuddy.cn/docs/connector)
 
 这些产品入口和选项可能随版本变化，使用宿主当前帮助核对；不把安装 deep link 当作 OAuth 回调。
+
+全流程扩展见[文件与工序操作](workflow.md)。接入前核对实际服务端能力；本地 Skill 更新不表示这些工具已上线。旧连接需要用户重新授权新增 scope，不能自动扩大原授权。

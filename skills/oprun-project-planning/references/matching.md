@@ -4,7 +4,7 @@
 
 ## 检查能力与恢复连接
 
-标准连接申请全部 8 项：`plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit`。不在配置里写 Scope 的宿主会得到同样的完整申请；用户可在 OpRun 授权页选择“只允许查看项目、匹配和交付进度”，此时只授予 `plan:read match:read delivery:read`。QVeris 必须在配置里写明 Scope，使用[完整配置](../assets/qveris-mcp.json)或[只读配置](../assets/qveris-readonly-mcp.json)。
+标准连接申请全部 17 项：`plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit files:read files:write execution:read execution:propose acceptance:propose release:propose funding:propose settlement:read settlement:propose`。不在配置里写 Scope 的宿主会得到同样的完整申请；用户可在 OpRun 授权页选择“只允许查看”，此时只授予 `plan:read match:read delivery:read files:read execution:read settlement:read`。QVeris 必须在配置里写明 Scope，使用[完整配置](../assets/qveris-mcp.json)或[只读配置](../assets/qveris-readonly-mcp.json)。
 
 工具列表对所有授权都相同，不要用“工具是否存在”判断能力。开始前调用 `oprun_account_context`：
 

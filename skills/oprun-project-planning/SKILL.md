@@ -1,6 +1,6 @@
 ---
 name: oprun-project-planning
-description: Clarify a project idea, author or revise its deliverable/dependency graph in this Agent, and use OpRun MCP for authorized drafts, validation, pricing, viewing and confirmed saving. Use for OpRun project planning, scoped revisions, quote review, reconnect recovery (including QVeris Studio and WorkBuddy setup), invitations, publication, worker matching and delivery submission with user confirmation; connecting alone must not generate or save a plan.
+description: Clarify a project idea, author or revise its deliverable/dependency graph in this Agent, and use OpRun MCP for authorized drafts, validation, pricing, viewing and confirmed saving. Use for OpRun project planning, scoped revisions, quote review, reconnect recovery (including QVeris Studio and WorkBuddy setup), invitations, publication, worker matching delivery submission, file upload, execution, acceptance, release and ledger settlement with user confirmation; connecting alone must not generate or save a plan.
 ---
 
 # OpRun 项目方案
@@ -157,7 +157,11 @@ description: Clarify a project idea, author or revise its deliverable/dependency
 
 ## 提交交付
 
-用户要提交承接工序的成果、查看质检或验收进度时，读取[交付指引](references/delivery.md)。先用 `oprun_delivery_context` 读取工序版本、可附加文件和能否提交；成果文件由用户在 OpRun 上传到该工序，Agent 不上传文件。提交遵循准备、用户网页确认、状态核验、执行、回查的顺序；提交只启动质检，不能说成已验收或已结算。
+用户要提交承接工序的成果、查看质检或验收进度时，读取[交付指引](references/delivery.md)。先用 `oprun_delivery_context` 读取工序版本、可附加文件和能否提交；文件按[全流程指引](references/workflow.md)在用户确认后经受控通道上传，或由用户在网页上传。提交遵循准备、用户网页确认、状态核验、执行、回查的顺序；提交只启动质检，不能说成已验收或已结算。
+
+## 文件、开工、验收、放行与结算
+
+这些操作读取[全流程指引](references/workflow.md)。先检查服务端能力和当前主体，只执行用户委托的动作。准备与执行分开，资金确认留在 OpRun 页面；上传不等于交付，放行不等于验收，系统内结算不等于银行卡到账。
 
 ## 接单、发单与匹配
 
