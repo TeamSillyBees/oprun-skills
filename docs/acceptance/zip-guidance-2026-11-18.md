@@ -35,4 +35,11 @@
 - 使用正式 GitHub npm 包，从隔离的 v1.4.0 安装更新到 v1.4.1，通过 doctor 公开发现检查；已有合成 MCP 配置逐字节保留。
 - Qveris 命令分支返回同版本 ZIP 下载地址和 `awaiting_host_import`，没有写连接配置或声称已导入。这是 CLI 制品验证，不是 Qveris 界面验收。
 - ZIP 与 v1.4.0 完全相同，已有 Skill 正文无需重新导入；新的安装与更新指引由 main 网页及 v1.4.1 INSTALL.md 提供。
-- GitHub 发布完成；npm v1.4.1 已暂存，当前仍待维护者 2FA。此时 npm latest 仍为 v1.4.0，不将暂存称为注册表发布成功。
+- GitHub 发布后，npm 曾等待维护者 2FA；维护者完成后已核实正式 v1.4.1 可下载，latest 指向 1.4.1。
+
+## npm 发布后验
+
+- 注册表 v1.4.1 的来源提交为 `76baadfd72ee254713bab68b27d6af678661d3d3`，下载的 tarball 与审核制品逐字节一致。
+- 使用全新缓存和隔离项目执行 `npx oprun-skills@latest install`、`update`、`doctor` 均通过，实际版本为 1.4.1。
+- 安装的全部 Skill 文件与正式 ZIP 清单一致；公开 OAuth 发现通过，未读取凭据或执行项目操作。客户端 OAuth、ZIP 导入不因此被标记为重新验收通过。
+- GitHub 与 npm 发布均已完成，未修改或部署 OpRun 业务服务。
