@@ -11,6 +11,8 @@ REPO = 'TeamSillyBees/oprun-skills'
 
 
 def content_type(name):
+    if name.endswith('.tgz'):
+        return 'application/gzip'
     if name.endswith('.zip'):
         return 'application/zip'
     if name.endswith('.json'):

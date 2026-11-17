@@ -1,0 +1,35 @@
+{
+  "name": "oprun-skills",
+  "version": "1.4.0",
+  "description": "Install, update and check the official OpRun Skill and remote MCP connection guidance",
+  "type": "module",
+  "bin": {
+    "oprun-skills": "cli/main.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "cli/",
+    "skills/",
+    "bundle.json",
+    "release.json",
+    "INSTALL.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TeamSillyBees/oprun-skills.git"
+  },
+  "homepage": "https://github.com/TeamSillyBees/oprun-skills#readme",
+  "bugs": {
+    "url": "https://github.com/TeamSillyBees/oprun-skills/issues"
+  },
+  "license": "UNLICENSED",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}

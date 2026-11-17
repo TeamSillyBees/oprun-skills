@@ -8,12 +8,13 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import tarfile
 import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL_DIR = "skills/oprun-project-planning"
-FIXED_SOURCES = ("release.json", "INSTALL.md", "mcp.json", "tools/package.py", "tools/sync.py", "tools/install.py", "tools/upload_assets.py")
+FIXED_SOURCES = ("release.json", "INSTALL.md", "mcp.json", "tools/package.py", "tools/sync.py", "tools/install.py", "tools/upload_assets.py", "package.json", "cli/core.mjs", "cli/main.mjs", "tools/package-npm.mjs")
 # Host import files are published next to the ZIP so users can import them directly.
 HOST_CONFIG = "assets/*-mcp.json"
 
@@ -31,6 +32,7 @@ def skill_files(revision="HEAD"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--npm-tarball", type=Path, help="verified npm pack artifact from this same commit")
     parser.add_argument(
         "--allow-unpushed",
         action="store_true",
@@ -66,8 +68,36 @@ def main():
     # The standalone INSTALL.md links to blob/<revision>; it must exist remotely.
     if not args.allow_unpushed and not git("branch", "-r", "--contains", revision).strip():
         raise SystemExit(f"Push {revision} before building release assets")
+    npm_bytes = None
+    if args.npm_tarball:
+        if args.npm_tarball.stat().st_size > 16 * 1024 * 1024:
+            raise SystemExit("npm package exceeds size limit")
+        npm_bytes = args.npm_tarball.read_bytes()
+        with tarfile.open(args.npm_tarball, "r:gz") as archive:
+            members = archive.getmembers()
+            if any(not member.isfile() for member in members) or sum(member.size for member in members) > 16 * 1024 * 1024:
+                raise SystemExit("Unsafe npm archive entries")
+            entries = {member.name: archive.extractfile(member).read() for member in members}
+            expected_names = {"package/" + name for name in ("package.json", "bundle.json", "release.json", "README.md", "INSTALL.md", "cli/core.mjs", "cli/main.mjs")}
+            expected_names.update("package/" + SKILL_DIR + "/" + name for name in files)
+            if len(entries) != len(members) or set(entries) != expected_names:
+                raise SystemExit("Unexpected npm archive files")
+            for name in ("release.json", "INSTALL.md", "cli/core.mjs", "cli/main.mjs", *(SKILL_DIR + "/" + name for name in files)):
+                if entries["package/" + name] != contents[name]:
+                    raise SystemExit("npm archive differs from commit: " + name)
+            if entries["package/README.md"] != subprocess.check_output(["git", "show", revision + ":README.md"], cwd=ROOT):
+                raise SystemExit("npm README differs from commit")
+            npm_manifest = json.loads(entries["package/bundle.json"])
+            expected_hashes = {name: hashlib.sha256(contents[SKILL_DIR + "/" + name]).hexdigest() for name in files}
+            if npm_manifest != {**release, "revision": revision, "skill_files": expected_hashes}:
+                raise SystemExit("npm/ZIP manifest mismatch")
+            expected_package = {**json.loads(contents["package.json"]), "oprun": {"source_revision": revision, "mcp_revision": release["mcp_revision"]}}
+            if json.loads(entries["package/package.json"]) != expected_package:
+                raise SystemExit("npm package metadata mismatch")
     # A fresh directory prevents overwriting previously reviewed release assets.
     args.output_dir.mkdir(parents=True, exist_ok=False)
+    if npm_bytes is not None:
+        (args.output_dir / "oprun-skills.tgz").write_bytes(npm_bytes)
     bundle = args.output_dir / "oprun-project-planning.zip"
     with zipfile.ZipFile(bundle, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for name in files:

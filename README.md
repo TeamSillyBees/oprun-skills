@@ -4,6 +4,18 @@
 
 > 请按 https://github.com/TeamSillyBees/oprun-skills/blob/main/INSTALL.md 安装或更新 OpRun，带我完成连接。
 
+有 Node.js 22+ 的命令行客户端可直接运行：
+
+```sh
+npx oprun-skills@latest install --host codex
+npx oprun-skills@latest update --host codex
+npx oprun-skills@latest doctor --host codex
+```
+
+也可执行 `npm install -g oprun-skills`，再用 `oprun-skills install|update|doctor`；使用全局安装时，先用 `npm install -g oprun-skills@latest` 更新工具本身。
+
+Claude Code 使用 `--host claude`；已能确定当前项目标记时可省略 `--host`。Qveris、WorkBuddy 保留原生 ZIP 导入，`--host qveris` 或 `--host workbuddy` 返回同版本下载地址及配置。npm 工具无需 Python，不启动本地 MCP 服务，不改写已有连接或登录信息。
+
 [下载安装包](https://github.com/TeamSillyBees/oprun-skills/releases/latest/download/oprun-project-planning.zip) · [安装与排错](INSTALL.md)
 
 支持 Skill 和 MCP OAuth 的客户端可按指引完成安装及连接检查，首次登录授权由你完成。Qveris 1.0.22 的当前研究会话可读取指引和检查连接，但不能执行安装程序；实际安装及更新使用“添加技能 → 上传 ZIP”，随后在对话中选择 Skill 并启用 oprun。Qveris、WorkBuddy 若不能自动添加连接，导入对应配置后点击授权即可。一个连接支持方案、发单、接单和交付，能力随当前身份及授权确定。
@@ -24,7 +36,7 @@
 
 ## 维护发布
 
-Skill 内容的唯一来源是 oprun-mcp 仓库的 `skills/oprun-project-planning`，与服务端协议同仓维护，并由 OpRun MCP 以资源形式提供。**不要直接修改本仓库的 `skills/`**；修改先合入 oprun-mcp `main`，再同步到这里。本仓库只维护安装说明、通用连接示例、同步和打包工具。
+Skill 内容的唯一来源是 oprun-mcp 仓库的 `skills/oprun-project-planning`，与服务端协议同仓维护，并由 OpRun MCP 以资源形式提供。**不要直接修改本仓库的 `skills/`**；修改先合入 oprun-mcp `main`，再同步到这里。本仓库只维护安装说明、通用连接示例、安装器、同步和打包工具。
 
 1. 在 oprun-mcp 本地克隆中拉取最新 `main`，然后在本仓库运行（默认 `origin/main`，拒绝未合入 main 的提交）：
 
@@ -47,3 +59,17 @@ Skill 内容的唯一来源是 oprun-mcp 仓库的 `skills/oprun-project-plannin
 输出可复现的 ZIP、安装指南、安装工具 `install.py`、通用及各宿主 MCP 配置（Skill 中的 `assets/*-mcp.json`）、`manifest.json` 与 `SHA256SUMS`。ZIP 即同步来的完整 Skill 目录；清单的 `skill_files` 列出每个成员的校验值，`mcp_revision` 是 Skill 来源提交，不代表线上当前版本。为新版本使用新的输出目录和版本标签；源码更新与 Release 发布分开执行，不覆盖旧资产。
 
 Skill 的唯一维护源迁到 [oprun-mcp](https://github.com/TeamSillyBees/oprun-mcp)。此仓库只分发固定提交；原 PR #17 的工序与文件说明由本次同步一并纳入，不需要分别建立发单和接单连接。
+
+## npm 发布
+
+npm 与 ZIP 使用相同的 `release.json` 版本、固定来源和逐文件摘要。先运行 `node --test tests/*.test.mjs`，再提交推送。构建器拒绝未提交内容、版本错配、覆盖旧制品和安装时自动执行的脚本。
+
+```sh
+node tools/package-npm.mjs --output-dir dist/npm-v<版本>
+cd dist/npm-v<版本>
+npm pack --ignore-scripts
+```
+
+发布前核对 npm 包名的所有权、包内文件清单，以及 `bundle.json` 和 ZIP `manifest.json` 中的 `skill_files`、`revision` 完全一致。使用已审核的 `.tgz` 执行 `npm publish <包文件> --access public --ignore-scripts`；首次发布和 npm 的双重验证由维护者完成，不记录凭据。正式 ZIP 和 npm 必须来自同一提交。用 `python3 tools/package.py --output-dir dist/v<版本> --npm-tarball dist/npm-v<版本>/oprun-skills-<版本>.tgz` 生成联合 Release，逐文件验证后把 npm 包作为 `oprun-skills.tgz` 纳入清单。分别下载验证后才报告发布完成。npm 发布失败时不要宣称 npm 注册表已可用，原 ZIP 安装保持可用；也可通过 `npx https://github.com/TeamSillyBees/oprun-skills/releases/latest/download/oprun-skills.tgz install` 安装同版本包。
+
+CLI 没有运行时依赖及安装钩子；`install` / `update` 仅在显式调用时写 Skill 目录。`doctor` 不读取 OAuth 凭据，不查询业务项目。npm 包不会在后台拉取新内容：更新使用 `npx oprun-skills@latest update`，需要固定版本时用 `@<版本>`。原 Python 安装器继续提供；两者兼容同一安装记录。
