@@ -42,12 +42,13 @@ def verify(directory, tag):
 
 def upload(directory, tag):
     manifest = verify(directory, tag)
-    release = json.loads(subprocess.check_output(['gh','api',f'repos/{REPO}/releases/tags/{tag}']))
-    if not release['draft'] or release['assets'] or release['target_commitish'] != manifest['revision']:
+    release = json.loads(subprocess.check_output(['gh','release','view',tag,'--repo',REPO,
+                                                '--json','databaseId,isDraft,targetCommitish,assets']))
+    if not release['isDraft'] or release['assets'] or release['targetCommitish'] != manifest['revision']:
         raise ValueError('Require an empty draft bound to the full package revision; never overwrite assets')
     for p in sorted(Path(directory).iterdir()):
         subprocess.run(['gh','api','--method','POST','-H','Content-Type: '+content_type(p.name),
-                        '--input',str(p), f'https://uploads.github.com/repos/{REPO}/releases/{release["id"]}/assets?name={quote(p.name)}'],
+                        '--input',str(p), f'https://uploads.github.com/repos/{REPO}/releases/{release["databaseId"]}/assets?name={quote(p.name)}'],
                        check=True, stdout=subprocess.DEVNULL)
         print('Uploaded ' + p.name)
 

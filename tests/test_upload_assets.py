@@ -17,12 +17,12 @@ class UploadTest(unittest.TestCase):
   hashes={**hashes,'manifest.json':hashlib.sha256((self.p/'manifest.json').read_bytes()).hexdigest()}
   (self.p/'SHA256SUMS').write_text(''.join(f'{h}  {n}\n' for n,h in hashes.items()))
  def test_web_fetchable_upload_and_no_overwrite(self):
-  r={'id':12,'draft':True,'assets':[],'target_commitish':'a'*40}
+  r={'databaseId':12,'isDraft':True,'assets':[],'targetCommitish':'a'*40}
   with patch.object(u.subprocess,'check_output',return_value=json.dumps(r).encode()),patch.object(u.subprocess,'run') as run:
    u.upload(self.p,'v1.3.1')
    cmd=next(c.args[0] for c in run.call_args_list if str(self.p/'INSTALL.md') in c.args[0])
    self.assertIn('Content-Type: text/plain; charset=utf-8',cmd)
-  for bad in ({**r,'draft':False},{**r,'assets':[{}]},{**r,'target_commitish':'b'*40}):
+  for bad in ({**r,'isDraft':False},{**r,'assets':[{}]},{**r,'targetCommitish':'b'*40}):
    with patch.object(u.subprocess,'check_output',return_value=json.dumps(bad).encode()),patch.object(u.subprocess,'run') as run,self.assertRaises(ValueError):
     u.upload(self.p,'v1.3.1')
    run.assert_not_called()
