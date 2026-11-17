@@ -6,7 +6,7 @@
 
 [下载安装包](https://github.com/TeamSillyBees/oprun-skills/releases/latest/download/oprun-project-planning.zip) · [安装与排错](INSTALL.md)
 
-支持 Skill 和 MCP OAuth 的客户端可按指引完成安装及连接检查，首次登录授权由你完成。Qveris、WorkBuddy 若不能自动添加连接，导入对应配置后点击授权即可。一个连接支持方案、发单、接单和交付，能力随当前身份及授权确定。
+支持 Skill 和 MCP OAuth 的客户端可按指引完成安装及连接检查，首次登录授权由你完成。Qveris 1.0.22 的当前研究会话可读取指引和检查连接，但不能执行安装程序；实际安装及更新使用“添加技能 → 上传 ZIP”，随后在对话中选择 Skill 并启用 oprun。Qveris、WorkBuddy 若不能自动添加连接，导入对应配置后点击授权即可。一个连接支持方案、发单、接单和交付，能力随当前身份及授权确定。
 
 安装工具只处理 Skill 和公开配置，不保存密码或 Token，不自动扩大已有授权。更新校验正式版本、保留恢复目录，遇到本地修改停止覆盖。
 
