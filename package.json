@@ -1,6 +1,6 @@
 {
   "name": "oprun-skills",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Install, update and check the official OpRun Skill and remote MCP connection guidance",
   "type": "module",
   "bin": {

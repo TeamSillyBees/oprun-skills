@@ -76,7 +76,14 @@ class SkillPackageTest(unittest.TestCase):
         for markdown in install.rglob("*.md"):
             for target in re.findall(r"\]\(([^)]+)\)", markdown.read_text(encoding="utf-8")):
                 if not target.startswith("https://"):
-                    self.assertTrue((markdown.parent / target).is_file(), target)
+                    from urllib.parse import unquote, urlsplit
+                    link = urlsplit(target)
+                    referenced = markdown.parent / unquote(link.path) if link.path else markdown
+                    self.assertTrue(referenced.is_file(), target)
+                    if link.fragment:
+                        headings = re.findall(r"^#{1,6}\s+(.+)$", referenced.read_text(encoding="utf-8"), re.M)
+                        anchors = {re.sub(r"[^\w -]", "", title.lower()).replace(" ", "-") for title in headings}
+                        self.assertIn(unquote(link.fragment), anchors, target)
         config = json.loads((install / "oprun-project-planning/assets/workbuddy-mcp.json").read_text(encoding="utf-8"))
         self.assertEqual(config, {"mcpServers": {"oprun": {"type": "streamableHttp", "url": "https://www.agi.yifx.vip/mcp"}}})
         self.assertEqual((output / "workbuddy-mcp.json").read_bytes(), (install / "oprun-project-planning/assets/workbuddy-mcp.json").read_bytes())
