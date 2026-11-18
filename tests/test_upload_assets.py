@@ -13,7 +13,7 @@ class UploadTest(unittest.TestCase):
   self.t=tempfile.TemporaryDirectory();self.addCleanup(self.t.cleanup);self.p=Path(self.t.name)
   (self.p/'INSTALL.md').write_bytes(b'instructions')
   hashes={'INSTALL.md':hashlib.sha256(b'instructions').hexdigest()}
-  (self.p/'manifest.json').write_text(json.dumps({'repository':u.REPO,'tag':'v1.3.1','revision':'a'*40,'files':hashes}))
+  (self.p/'manifest.json').write_text(json.dumps({'repository':u.REPO,'tag':'v1.3.1','revision':'a'*40,'files':hashes,'source_merge_status':'merged'}))
   hashes={**hashes,'manifest.json':hashlib.sha256((self.p/'manifest.json').read_bytes()).hexdigest()}
   (self.p/'SHA256SUMS').write_text(''.join(f'{h}  {n}\n' for n,h in hashes.items()))
  def test_document_upload_type_and_no_overwrite(self):
@@ -31,3 +31,10 @@ class UploadTest(unittest.TestCase):
   with self.assertRaises(ValueError):u.verify(self.p,'v1.3.1')
   (self.p/'extra.txt').write_text('extra')
   with self.assertRaises(ValueError):u.verify(self.p,'v1.3.1')
+ def test_pending_mcp_source_blocks_upload_before_remote_access(self):
+  manifest=u.verify(self.p,'v1.3.1')
+  pending={**manifest,'source_merge_status':'pending'}
+  with patch.object(u,'verify',return_value=pending),patch.object(u.subprocess,'check_output') as remote:
+   with self.assertRaisesRegex(ValueError,'MCP source must merge'):
+    u.upload(self.p,'v1.3.1')
+   remote.assert_not_called()

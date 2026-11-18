@@ -33,6 +33,7 @@ const hashes = Object.fromEntries(names.filter(name => name.startsWith(skillPref
 if (!hashes['SKILL.md']) throw new Error('Missing Skill');
 const manifest = {...release, revision, skill_files: hashes};
 const publishPackage = {...pkg, oprun: {source_revision: revision, mcp_revision: release.mcp_revision}};
+if (release.source_merge_status !== 'merged') publishPackage.private = true;
 fs.mkdirSync(out, {recursive: true});
 for (const [name, contents] of bytes) {
   fs.mkdirSync(path.dirname(path.join(out, name)), {recursive: true});

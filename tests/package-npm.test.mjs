@@ -56,6 +56,7 @@ test('unmerged MCP instructions may only be packaged for a local trial', t => {
   assert.match(official.stderr, /source has not merged/);
   assert.equal(fs.existsSync(path.join(root,'candidate')), false);
   assert.equal(pack('--allow-unpushed').status, 0);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'candidate/package.json'))).private, true);
 });
 test('npm builder rejects dirty inputs, mismatched versions, unpushed commits and tag reuse', t => {
   const {root,git}=fixture(t);

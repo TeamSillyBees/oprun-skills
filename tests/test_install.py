@@ -89,21 +89,43 @@ class InstallTest(unittest.TestCase):
         self.assertEqual(m.choose_host('auto', root), 'generic')
         source = Path(__file__).resolve().parents[1]/'skills'/m.SKILL
         files = {p.relative_to(source).as_posix():p.read_bytes() for p in source.rglob('*') if p.is_file()}
-        for host in ('codex','claude','workbuddy','qveris','generic'):
-            config, scopes = m.profile(host, True, files)
-            self.assertTrue(all(s.endswith(':read') for s in scopes.split()))
+        endpoint = m.deployment_url('https://mcp.oprun.test/mcp', '/mcp')
+        issuer = m.deployment_url('https://api.oprun.test/mcp-oauth', '/mcp-oauth')
+        self.assertEqual(m.profile('qveris', True, files, endpoint)['status'], 'awaiting_endpoint')
+        for host in ('codex', 'claude', 'workbuddy', 'qveris', 'generic'):
+            profile = m.profile(host, True, files, endpoint, issuer)
+            self.assertTrue(all(scope.endswith(':read') for scope in profile['requested_scopes']))
+            servers = profile['config']['mcpServers']
+            self.assertEqual(set(servers), {'oprun-new'})
+            self.assertEqual(servers['oprun-new']['url'], endpoint.geturl())
+            self.assertFalse(profile['config_written'])
             if host == 'qveris':
-                self.assertEqual(config['mcpServers']['oprun']['issuer'], m.SITE+'/mcp')
+                self.assertEqual(servers['oprun-new']['issuer'], issuer.geturl())
 
     def test_discovery_does_not_claim_authentication(self):
-        values = [json.dumps({'resource': m.SITE+'/mcp', 'authorization_servers':[m.SITE+'/mcp']}).encode(),
-                  json.dumps({'issuer': m.SITE+'/mcp', 'code_challenge_methods_supported':['S256']}).encode()]
-        with patch.object(m, 'fetch', side_effect=values):
-            result = m.check_connection()
+        endpoint = m.deployment_url('https://mcp.oprun.test/mcp', '/mcp')
+        issuer = m.deployment_url('https://api.oprun.test/mcp-oauth', '/mcp-oauth')
+        values = [json.dumps({'resource': endpoint.geturl(), 'authorization_servers': [issuer.geturl()]}).encode(),
+                  json.dumps({'issuer': issuer.geturl(), 'code_challenge_methods_supported': ['S256'],
+                              'scopes_supported': ['quality:read']}).encode()]
+        with patch.object(m, 'fetch', side_effect=values) as fetch:
+            result = m.check_connection(endpoint, issuer)
         self.assertEqual(result['oauth'], 'not_checked')
         self.assertEqual(result['tools'], 'not_checked')
-        with patch.object(m, 'fetch', return_value=b'{}'), self.assertRaises(ValueError):
-            m.check_connection()
+        self.assertEqual([call.args[0] for call in fetch.call_args_list], [
+            'https://mcp.oprun.test/.well-known/oauth-protected-resource/mcp',
+            'https://api.oprun.test/.well-known/oauth-authorization-server/mcp-oauth',
+        ])
+        with patch.object(m, 'fetch', return_value=b'{}') as fetch, self.assertRaises(ValueError):
+            m.check_connection(endpoint, issuer)
+        self.assertEqual(fetch.call_count, 1)
+
+    def test_deployment_url_excludes_placeholders_and_credentials(self):
+        for url in ('https://oprun-new.example.invalid/mcp', 'https://user:secret@oprun.test/mcp',
+                    'https://oprun.test/mcp?token=secret', 'http://oprun.test/mcp'):
+            with self.assertRaises(ValueError):
+                m.deployment_url(url, '/mcp')
+        self.assertEqual(m.deployment_url('http://127.0.0.1:4000/mcp', '/mcp').port, 4000)
 
     def test_pinned_download_and_corruption(self):
         bundle = self.archive({m.SKILL+'/'+n:v for n,v in self.files.items()})

@@ -1,7 +1,7 @@
 {
   "name": "oprun-skills",
-  "version": "1.5.0",
-  "description": "Install, update and check the official OpRun Skill and remote MCP connection guidance",
+  "version": "2.0.0",
+  "description": "Install, update and check the OpRun project Skill for the independent MCP service",
   "type": "module",
   "bin": {
     "oprun-skills": "cli/main.mjs"
