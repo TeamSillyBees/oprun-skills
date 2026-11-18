@@ -84,45 +84,27 @@ class SkillPackageTest(unittest.TestCase):
                         headings = re.findall(r"^#{1,6}\s+(.+)$", referenced.read_text(encoding="utf-8"), re.M)
                         anchors = {re.sub(r"[^\w -]", "", title.lower()).replace(" ", "-") for title in headings}
                         self.assertIn(unquote(link.fragment), anchors, target)
-        config = json.loads((install / "oprun-project-planning/assets/workbuddy-mcp.json").read_text(encoding="utf-8"))
-        self.assertEqual(config, {"mcpServers": {"oprun": {"type": "streamableHttp", "url": "https://www.agi.yifx.vip/mcp"}}})
-        self.assertEqual((output / "workbuddy-mcp.json").read_bytes(), (install / "oprun-project-planning/assets/workbuddy-mcp.json").read_bytes())
+        template = "oprun-project-planning/assets/qveris-mcp.json"
+        self.assertEqual((output / "qveris-mcp.json").read_bytes(), (install / template).read_bytes())
 
-    def test_qveris_import_keeps_oauth_and_the_path_scoped_issuer(self):
+    def test_qveris_import_uses_one_new_connection_template(self):
         output = self.build()
         config = json.loads((output / "qveris-mcp.json").read_text(encoding="utf-8"))
-        self.assertEqual(set(config["mcpServers"]), {"oprun"})
-        server = config["mcpServers"]["oprun"]
+        self.assertEqual(set(config["mcpServers"]), {"oprun-new"})
+        server = config["mcpServers"]["oprun-new"]
         self.assertEqual(server["type"], "http")
         self.assertEqual(server["authMode"], "oauth")
-        self.assertEqual(server["issuer"], "https://www.agi.yifx.vip/mcp")
-        self.assertEqual(server["url"], server["issuer"])
+        self.assertEqual(server["url"], "https://oprun-new.example.invalid/mcp")
         self.assertEqual(server["scope"].split(), [
             "plan:read", "plan:propose", "plan:generate", "plan:publish",
             "match:read", "match:propose", "delivery:read", "delivery:submit",
-            "files:read", "files:write", "execution:read", "execution:propose",
-            "acceptance:propose", "release:propose", "funding:propose", "settlement:read", "settlement:propose"])
-        self.assertEqual(set(server), {"type", "url", "authMode", "issuer", "scope"})
+            "quality:read", "quality:review", "acceptance:propose",
+        ])
+        self.assertEqual(set(server), {"type", "url", "authMode", "scope"})
+        self.assertEqual(list(output.glob("*-mcp.json")), [output / "qveris-mcp.json"])
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:
             self.assertEqual(archive.read("oprun-project-planning/assets/qveris-mcp.json"),
                              (output / "qveris-mcp.json").read_bytes())
-
-    def test_readonly_profile_preserves_oauth_and_only_reads(self):
-        output = self.build()
-        expected = {"qveris-readonly-mcp.json": {"plan:read", "match:read", "delivery:read", "files:read", "execution:read", "settlement:read"}}
-        self.assertFalse((output / "qveris-worker-mcp.json").exists())
-        self.assertFalse((output / "qveris-publisher-mcp.json").exists())
-        with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:
-            for name, scopes in expected.items():
-                with self.subTest(profile=name):
-                    raw = (output / name).read_bytes()
-                    server = json.loads(raw)["mcpServers"]["oprun"]
-                    self.assertEqual(server["authMode"], "oauth")
-                    self.assertEqual(server["issuer"], "https://www.agi.yifx.vip/mcp")
-                    self.assertEqual(server["url"], server["issuer"])
-                    self.assertEqual(set(server["scope"].split()), scopes)
-                    self.assertEqual(set(server), {"type", "url", "authMode", "issuer", "scope"})
-                    self.assertEqual(raw, archive.read(f"oprun-project-planning/assets/{name}"))
 
     def test_modified_qveris_resource_is_rejected(self):
         resource = self.root / "skills/oprun-project-planning/assets/qveris-mcp.json"
@@ -158,7 +140,7 @@ class SkillPackageTest(unittest.TestCase):
         self.assertEqual({p.name: p.read_bytes() for p in first.iterdir()}, {p.name: p.read_bytes() for p in second.iterdir()})
 
     def test_modified_supporting_resource_is_rejected(self):
-        resource = self.root / "skills/oprun-project-planning/assets/workbuddy-mcp.json"
+        resource = self.root / "skills/oprun-project-planning/assets/qveris-mcp.json"
         resource.write_text("{}\n")
         with self.assertRaises(SystemExit):
             self.build()

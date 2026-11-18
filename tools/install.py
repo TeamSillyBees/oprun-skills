@@ -10,13 +10,13 @@ import re
 import shutil
 import stat
 import tempfile
-import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
 import zipfile
 
 REPO = 'TeamSillyBees/oprun-skills'
 SKILL = 'oprun-project-planning'
-SITE = 'https://www.agi.yifx.vip'
+SERVER = 'oprun-new'
 LIMIT = 16 * 1024 * 1024
 STATE = '.oprun-install.json'
 
@@ -25,9 +25,9 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def fetch(url):
+def fetch(url, opener=urllib.request.urlopen):
     request = urllib.request.Request(url, headers={'User-Agent': 'oprun-skill-installer'})
-    with urllib.request.urlopen(request, timeout=25) as response:
+    with opener(request, timeout=25) as response:
         data = response.read(LIMIT + 1)
         if len(data) > LIMIT:
             raise ValueError('下载超过大小限制')
@@ -143,29 +143,65 @@ def choose_host(host, project):
     return matches[0] if len(matches) == 1 else 'generic'
 
 
-def profile(host, readonly, files):
-    name = 'qveris-readonly-mcp.json' if readonly else 'qveris-mcp.json'
-    config = json.loads(files['assets/' + name])
-    if host != 'qveris':
-        server = config['mcpServers']['oprun']
-        scopes = server.pop('scope')
+def deployment_url(value, path):
+    try:
+        parsed = urlsplit(value)
+        host = parsed.hostname
+        parsed.port
+    except ValueError:
+        host = None
+    if (host is None or host.endswith('.invalid')
+            or (parsed.scheme != 'https' and (parsed.scheme != 'http' or host not in {'localhost', '127.0.0.1', '::1'}))
+            or parsed.username is not None or parsed.path != path
+            or value != f'{parsed.scheme}://{parsed.netloc}{path}' or any(char.isspace() for char in value)):
+        raise ValueError('新 MCP 资源须为 HTTPS /mcp，issuer 须为 HTTPS /mcp-oauth；本地回环可使用 HTTP')
+    return parsed
+
+
+def profile(host, readonly, files, endpoint=None, issuer=None):
+    config = json.loads(files['assets/qveris-mcp.json'])
+    if set(config['mcpServers']) != {SERVER}:
+        raise ValueError('安装包缺少新版 MCP 配置')
+    server = config['mcpServers'][SERVER]
+    scopes = [scope for scope in server['scope'].split() if not readonly or scope.endswith(':read')]
+    result = {'server': SERVER, 'requested_scopes': scopes, 'config_written': False, 'oauth': 'not_checked', 'tools': 'not_checked'}
+    if endpoint is None or (host == 'qveris' and issuer is None):
+        return {**result, 'status': 'awaiting_endpoint', 'next': '请使用部署方提供的新 MCP 地址和所需 OAuth issuer。'}
+    server['url'] = endpoint.geturl()
+    if host == 'qveris':
+        server['issuer'] = issuer.geturl()
+        server['scope'] = ' '.join(scopes)
+    else:
+        server.pop('scope')
         server.pop('authMode')
-        server.pop('issuer')
+        server.pop('issuer', None)
         if host == 'workbuddy':
             server['type'] = 'streamableHttp'
-        return config, scopes
-    return config, config['mcpServers']['oprun']['scope']
+    return {**result, 'config': config, 'status': 'awaiting_oauth', 'next': '在宿主选择此新连接并完成 OAuth，然后核对工具和当前主体。'}
 
 
-def check_connection():
-    resource = json.loads(fetch(SITE + '/.well-known/oauth-protected-resource/mcp'))
-    auth = json.loads(fetch(SITE + '/.well-known/oauth-authorization-server/mcp'))
-    if resource.get('resource') != SITE + '/mcp' or SITE + '/mcp' not in resource.get('authorization_servers', []):
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def check_connection(endpoint, issuer):
+    opener = urllib.request.build_opener(NoRedirect()).open
+    resource_url = f'{endpoint.scheme}://{endpoint.netloc}/.well-known/oauth-protected-resource/mcp'
+    resource = json.loads(fetch(resource_url, opener))
+    def includes(values, value):
+        return isinstance(values, list) and value in values
+
+    if not isinstance(resource, dict) or resource.get('resource') != endpoint.geturl() or not includes(resource.get('authorization_servers'), issuer.geturl()):
         raise ValueError('OAuth 资源归属不符')
-    if auth.get('issuer') != SITE + '/mcp' or 'S256' not in auth.get('code_challenge_methods_supported', []):
+    auth_url = f'{issuer.scheme}://{issuer.netloc}/.well-known/oauth-authorization-server/mcp-oauth'
+    auth = json.loads(fetch(auth_url, opener))
+    if (not isinstance(auth, dict) or auth.get('issuer') != issuer.geturl()
+            or not includes(auth.get('code_challenge_methods_supported'), 'S256')
+            or not includes(auth.get('scopes_supported'), 'quality:read')):
         raise ValueError('OAuth 发现或 PKCE 不可用')
     return {'discovery': 'passed', 'oauth': 'not_checked', 'tools': 'not_checked',
-            'next': '由宿主完成登录，再调用 tools/list 和 oprun_account_context；不查询项目。'}
+            'next': '由宿主完成登录，再通过新连接调用 tools/list 和 oprun_new_account_context。'}
 
 
 def main():
@@ -176,25 +212,35 @@ def main():
     parser.add_argument('--target', type=Path, help='完整 Skill 目标目录；桌面客户端由宿主确认此路径')
     parser.add_argument('--version', default='latest')
     parser.add_argument('--readonly', action='store_true')
+    parser.add_argument('--mcp-url', help='部署方提供的新 MCP 地址')
+    parser.add_argument('--oauth-issuer', help='部署方提供的新 OAuth issuer')
+    parser.add_argument('--offline', action='store_true', help='check 时仅检查本地文件')
     args = parser.parse_args()
     try:
+        endpoint = deployment_url(args.mcp_url, '/mcp') if args.mcp_url is not None else None
+        issuer = deployment_url(args.oauth_issuer, '/mcp-oauth') if args.oauth_issuer is not None else None
         if args.action == 'check':
-            result = check_connection()
+            if args.offline:
+                result = {'discovery': 'not_checked', 'oauth': 'not_checked', 'tools': 'not_checked'}
+            elif endpoint is not None and issuer is not None:
+                result = check_connection(endpoint, issuer)
+            else:
+                result = {'status': 'awaiting_endpoint', 'oauth': 'not_checked', 'tools': 'not_checked'}
             if args.target:
                 receipt = json.loads((args.target / STATE).read_text())
                 result['skill'] = 'verified' if tree_hashes(args.target) == receipt['skill_files'] else 'modified'
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return
+        if args.offline:
+            raise ValueError('--offline 仅适用于 check')
         manifest, files = release_bundle(args.version)
         host = choose_host(args.host, args.project)
+        connection = profile(host, args.readonly, files, endpoint, issuer)
         target = args.target
         if target is None and host in ('codex', 'claude'):
             target = args.project / ('.agents' if host == 'codex' else '.claude') / 'skills' / SKILL
         result = install(target, manifest, files, args.action == 'update') if target else {'skill': 'awaiting_host_import', 'version': manifest['version']}
-        config, scopes = profile(host, args.readonly, files)
-        result.update({'host': host, 'mcp': 'awaiting_host_configuration_or_reuse', 'oauth': 'not_checked',
-                       'config': config, 'requested_scopes': scopes,
-                       'next': '复用同站点连接；无连接时用宿主原生导入。由用户登录授权，tools/list 与 oprun_account_context 成功后才报告已连接。'})
+        result.update({'host': host, 'connection': connection})
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except (ValueError, KeyError, OSError, zipfile.BadZipFile) as error:
         # Never print response bodies, authenticated URLs or credentials.

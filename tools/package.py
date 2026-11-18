@@ -59,7 +59,7 @@ def main():
     release = json.loads(contents["release.json"])
     if not re.fullmatch(r"\d+\.\d+\.\d+", release["version"]):
         raise SystemExit("release.json must contain a stable semantic version")
-    if release.get("source_merge_status") == "pending" and not args.allow_unpushed:
+    if release.get("source_merge_status") != "merged" and not args.allow_unpushed:
         raise SystemExit("MCP source is pending review; only a local trial package may be built")
     tag = "v" + release["version"]
     tagged = git("tag", "--list", tag, "--format=%(objectname)^{commit}").strip()
@@ -92,6 +92,8 @@ def main():
             if npm_manifest != {**release, "revision": revision, "skill_files": expected_hashes}:
                 raise SystemExit("npm/ZIP manifest mismatch")
             expected_package = {**json.loads(contents["package.json"]), "oprun": {"source_revision": revision, "mcp_revision": release["mcp_revision"]}}
+            if release.get("source_merge_status") != "merged":
+                expected_package["private"] = True
             if json.loads(entries["package/package.json"]) != expected_package:
                 raise SystemExit("npm package metadata mismatch")
     # A fresh directory prevents overwriting previously reviewed release assets.

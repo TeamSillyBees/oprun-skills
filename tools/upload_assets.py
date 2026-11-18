@@ -44,6 +44,8 @@ def verify(directory, tag):
 
 def upload(directory, tag):
     manifest = verify(directory, tag)
+    if manifest.get('source_merge_status') != 'merged':
+        raise ValueError('MCP source must merge before assets may be uploaded')
     release = json.loads(subprocess.check_output(['gh','release','view',tag,'--repo',REPO,
                                                 '--json','databaseId,isDraft,targetCommitish,assets']))
     if not release['isDraft'] or release['assets'] or release['targetCommitish'] != manifest['revision']:

@@ -4,7 +4,7 @@ import {createHash, randomUUID} from 'node:crypto';
 
 export const SKILL = 'oprun-project-planning';
 export const STATE = '.oprun-install.json';
-export const SITE = 'https://www.agi.yifx.vip';
+export const SERVER = 'oprun-new';
 const REPO = 'TeamSillyBees/oprun-skills';
 export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const fail = message => { throw new Error(message); };
@@ -57,6 +57,8 @@ export function loadBundle(root) {
   const release = json(path.join(root, 'release.json'));
   const pkg = json(path.join(root, 'package.json'));
   if (manifest.repository !== REPO || manifest.skill !== SKILL || manifest.version !== release.version || manifest.version !== pkg.version || manifest.mcp_revision !== release.mcp_revision || !/^[a-f0-9]{40}$/.test(manifest.revision) || !/^[a-f0-9]{40}$/.test(manifest.mcp_revision)) fail('Package identity mismatch');
+  if (manifest.source_merge_status !== release.source_merge_status ||
+      !['merged', 'pending'].includes(manifest.source_merge_status)) fail('MCP source status mismatch');
   version(manifest.version);
   const skillRoot = path.join(root, 'skills', SKILL);
   const hashes = treeHashes(skillRoot, false);
@@ -146,17 +148,37 @@ export function chooseHost(host, project) {
   const found = [['codex', '.agents'], ['claude', '.claude']].filter(([, marker]) => fs.existsSync(path.join(project, marker)));
   return found.length === 1 ? found[0][0] : 'generic';
 }
-export function profile(bundle, host, readonly) {
-  const config = json(path.join(bundle.skillRoot, 'assets', readonly ? 'qveris-readonly-mcp.json' : 'qveris-mcp.json'));
-  const server = config.mcpServers.oprun;
-  const requested_scopes = server.scope.split(' ');
-  if (host !== 'qveris') {
+export function deploymentUrl(value, pathname) {
+  let url;
+  try { url = new URL(value); } catch { fail('请输入部署方提供的新 MCP 地址或 OAuth issuer'); }
+  const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  if (!(url.protocol === 'https:' || (loopback && url.protocol === 'http:')) ||
+      url.hostname.endsWith('.invalid') || url.href !== url.origin + pathname) {
+    fail('新 MCP 资源须为 HTTPS /mcp，issuer 须为 HTTPS /mcp-oauth；本地回环可使用 HTTP');
+  }
+  return url;
+}
+export function profile(bundle, host, readonly, resource, issuer) {
+  const config = json(path.join(bundle.skillRoot, 'assets', 'qveris-mcp.json'));
+  if (Object.keys(config.mcpServers).length !== 1 || !config.mcpServers[SERVER]) fail('安装包缺少新版 MCP 配置');
+  const server = config.mcpServers[SERVER];
+  const requested_scopes = server.scope.split(' ').filter(scope => !readonly || scope.endsWith(':read'));
+  const connection = {server: SERVER, requested_scopes, config_written: false, oauth: 'not_checked', tools: 'not_checked'};
+  if (!resource || (host === 'qveris' && !issuer)) {
+    return {...connection, status: 'awaiting_endpoint', next: '请使用部署方提供的新 MCP 地址和所需 OAuth issuer。'};
+  }
+  server.url = resource.href;
+  if (host === 'qveris') {
+    server.issuer = issuer.href;
+    server.scope = requested_scopes.join(' ');
+  }
+  else {
     delete server.authMode; delete server.issuer; delete server.scope;
     if (host === 'workbuddy') server.type = 'streamableHttp';
   }
-  return {config, requested_scopes, config_written: false, oauth: 'not_checked', tools: 'not_checked'};
+  return {...connection, config, status: 'awaiting_oauth', next: '在宿主选择此新连接并完成 OAuth，然后核对工具和当前主体。'};
 }
-export async function checkConnection(fetcher = fetch) {
+export async function checkConnection(endpoint, issuer, fetcher = fetch) {
   async function get(url) {
     const response = await fetcher(url, {signal: AbortSignal.timeout(15000), redirect: 'error', headers: {'accept': 'application/json'}});
     if (!response.ok) fail('Public OAuth discovery request failed');
@@ -171,8 +193,11 @@ export async function checkConnection(fetcher = fetch) {
     } finally { await reader.cancel(); }
     return JSON.parse(Buffer.concat(chunks).toString('utf8'));
   }
-  const resource = await get(`${SITE}/.well-known/oauth-protected-resource/mcp`);
-  const auth = await get(`${SITE}/.well-known/oauth-authorization-server/mcp`);
-  if (resource.resource !== `${SITE}/mcp` || !resource.authorization_servers?.includes(`${SITE}/mcp`) || auth.issuer !== `${SITE}/mcp` || !auth.code_challenge_methods_supported?.includes('S256')) fail('Unexpected OAuth discovery metadata');
-  return {discovery: 'passed', oauth: 'not_checked', tools: 'not_checked', next: '在客户端完成 OAuth，再调用 tools/list 和 oprun_account_context；检查不读取项目。'};
+  const resource = await get(endpoint.origin + '/.well-known/oauth-protected-resource/mcp');
+  const includes = (values, expected) => Array.isArray(values) && values.includes(expected);
+  if (resource.resource !== endpoint.href || !includes(resource.authorization_servers, issuer.href)) fail('Unexpected OAuth discovery metadata');
+  const auth = await get(issuer.origin + '/.well-known/oauth-authorization-server/mcp-oauth');
+  if (auth.issuer !== issuer.href || !includes(auth.code_challenge_methods_supported, 'S256') ||
+      !includes(auth.scopes_supported, 'quality:read')) fail('Unexpected OAuth discovery metadata');
+  return {discovery: 'passed', oauth: 'not_checked', tools: 'not_checked', next: '在宿主完成 OAuth，再通过新连接调用 tools/list 和 oprun_new_account_context。'};
 }
