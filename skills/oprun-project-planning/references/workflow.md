@@ -1,5 +1,7 @@
 # 文件、执行、验收与结算
 
+从独立需求工作区创建的项目按[新项目双助手流程](new-projects.md)操作和恢复。
+
 仅在 `oprun_account_context.server_features` 包含 `confirmed_project_workflow` 和 `verified_file_upload`、实际 tools/list 已返回对应工具时使用。Skill 更新不代表服务端已部署；缺能力时保留已有方案、匹配与交付操作，提供网页入口。服务器拒绝新增 scope 时，不循环重新授权，先核对目标版本。
 
 ## 一次连接，按当前主体操作

@@ -78,4 +78,6 @@ npm 更新输出 backup 路径，备份位于 Skill 扫描目录外的 `oprun-sk
 
 说明页面读取失败时改用 GitHub Contents API 的 INSTALL.md（content 为 Base64）；不要重复读取被当作 `application/octet-stream` 的 Release 说明附件。只提供官方链接时如实标记未读取版本。
 
+新项目履约使用当前连接中的 `oprun_workspace_assess`、`oprun_new_project_profile_read`、`oprun_new_project_invitation_decide` 和 `oprun_new_project_request_status`。宿主工具目录和已登录主体决定实际能力。候选 Skill 的 `release.json` 标记 `pending` 时只能本地试装；MCP 来源合入后，用 `tools/sync.py` 同步实际合入的提交并核对摘要，再发布 ZIP 和 npm 包。
+
 Skill 正文唯一来源仍是 oprun-mcp 的固定提交。安装指引更新不改变服务端能力，不代替客户端真实验收。
