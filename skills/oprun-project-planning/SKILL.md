@@ -1,6 +1,6 @@
 ---
 name: oprun-project-planning
-description: Use the independent OpRun project workspace for requirement briefs, confirmed scopes, OPC negotiation, versioned delivery, and evidence-based quality and acceptance.
+description: Use the independent OpRun project workspace for requirement briefs, confirmed scopes, fixed-price invitations, OPC acceptance, enterprise signing, historical negotiation, versioned delivery, and evidence-based quality and acceptance.
 ---
 
 # OpRun 新项目
@@ -22,3 +22,5 @@ description: Use the independent OpRun project workspace for requirement briefs,
 - 执行人提交确切版本的成果，带 `asset_id` 和当前工序版本，收到可查回执后方可报告已交付。按同版条款查看质检、补齐材料并在必要时申请复核。企业在第一方页面确认逐条验收，退回时引用具体成果、条款和理由。
 
 工具与恢复方式见 [履约指引](references/fulfillment.md)。配置及升级见 [宿主接入](references/connection.md)。
+
+固定价项目先按[锁价、接单与签署](references/fixed-price.md)读取真实状态。
