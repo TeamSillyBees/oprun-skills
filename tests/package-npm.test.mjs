@@ -7,10 +7,13 @@ import {execFileSync, spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {SKILL, loadBundle, treeHashes} from '../cli/core.mjs';
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-function fixture(t) {
+function fixture(t, sourceStatus = "merged") {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'oprun-pack-test-'));
   t.after(() => fs.rmSync(root, {recursive: true, force: true}));
   for (const name of ['package.json','release.json','README.md','INSTALL.md','mcp.json','cli','skills','tools']) fs.cpSync(path.join(ROOT,name),path.join(root,name),{recursive:true});
+  const releasePath = path.join(root, 'release.json');
+  const release = JSON.parse(fs.readFileSync(releasePath, 'utf8'));
+  fs.writeFileSync(releasePath, JSON.stringify({...release, source_merge_status: sourceStatus}));
   const git = (...args) => execFileSync('git', args, {cwd:root, stdio:['ignore','pipe','pipe']}).toString().trim();
   git('init','--quiet');git('add','.');git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','-c','commit.gpgsign=false','commit','-qm','Synthetic package');
   git('update-ref','refs/remotes/origin/main','HEAD');
@@ -44,6 +47,15 @@ test('committed npm and ZIP payloads agree; packed npx runs without Python or in
   // Rebuilding committed bytes yields the same payload manifest.
   run(process.execPath,['tools/package-npm.mjs','--output-dir','npm-package-again']);
   assert.deepEqual(fs.readFileSync(path.join(root,'npm-package/bundle.json')),fs.readFileSync(path.join(root,'npm-package-again/bundle.json')));
+});
+test('unmerged MCP instructions may only be packaged for a local trial', t => {
+  const {root} = fixture(t, 'pending');
+  const pack = (...flags) => spawnSync(process.execPath, ['tools/package-npm.mjs','--output-dir','candidate',...flags], {cwd:root, encoding:'utf8'});
+  const official = pack();
+  assert.notEqual(official.status, 0);
+  assert.match(official.stderr, /source has not merged/);
+  assert.equal(fs.existsSync(path.join(root,'candidate')), false);
+  assert.equal(pack('--allow-unpushed').status, 0);
 });
 test('npm builder rejects dirty inputs, mismatched versions, unpushed commits and tag reuse', t => {
   const {root,git}=fixture(t);
