@@ -3,7 +3,7 @@
   "repository": "TeamSillyBees/oprun-skills",
   "skill": "oprun-project-planning",
   "grant_version": 3,
-  "mcp_revision": "576c270bbe43826a148715d02886b549a61ca584",
+  "mcp_revision": "1e6e78848d4a5086476c1734ea4cd8e7c6525a0f",
   "source_repository": "TeamSillyBees/oprun-mcp",
-  "source_merge_status": "pending"
+  "source_merge_status": "merged"
 }
