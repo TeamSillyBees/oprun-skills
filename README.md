@@ -46,6 +46,10 @@ cd dist/npm-v<版本>
 npm pack --ignore-scripts
 ```
 
-发布前核对 npm 包名的所有权、包内文件清单，以及 `bundle.json` 和 ZIP `manifest.json` 中的 `skill_files`、`revision` 完全一致。使用已审核的 `.tgz` 执行 `npm publish <包文件> --access public --ignore-scripts`；首次发布和 npm 的双重验证由维护者完成，不记录凭据。正式 ZIP 和 npm 必须来自同一提交。用 `python3 tools/package.py --output-dir dist/v<版本> --npm-tarball dist/npm-v<版本>/oprun-skills-<版本>.tgz` 生成联合 Release，逐文件验证后把 npm 包作为 `oprun-skills.tgz` 纳入清单。分别下载验证后才报告发布完成。npm 发布失败时不要宣称 npm 注册表已可用，原 ZIP 安装保持可用；也可在固定的 GitHub Release 下载同版本 npm 包。
+正式 ZIP 和 npm 包来自同一提交。用 `python3 tools/package.py --output-dir dist/v<版本> --npm-tarball dist/npm-v<版本>/oprun-skills-<版本>.tgz` 生成联合 Release，把 npm 包作为 `oprun-skills.tgz` 纳入清单。上传到草稿后下载校验，再把已合入 `main` 的提交发布为稳定版 GitHub Release。
+
+正式 Release 发布时，工作流校验标签、来源提交、资产摘要和 ZIP 内容，随后用 [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) 将同一份 `oprun-skills.tgz` 发布到 `latest`。工作流重新从 npm 下载并比较包字节，重复运行会检查已发布版本。发布失败时，修复原因后重跑原工作流。GitHub Release 附件仍可直接安装。
+
+首次启用时，npm 包维护者在 `oprun-skills` 的 Settings → Trusted publishing 选择 GitHub Actions，填写组织 `TeamSillyBees`、仓库 `oprun-skills`、工作流文件名 `publish-npm.yml`。环境名留空，启用直接执行 `npm publish`。在下一版就绪后绑定，npm 要求两天内首次发布成功。
 
 CLI 没有运行时依赖及安装钩子；`install` / `update` 仅在显式调用时写 Skill 目录。`doctor` 不读取 OAuth 凭据，不查询业务项目。手动更新可运行 `npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.5.1/oprun-skills.tgz update`。原 Python 安装器继续提供；两者兼容同一安装记录。
