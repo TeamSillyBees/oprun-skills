@@ -9,9 +9,9 @@ description: Use the independent OpRun project workspace for requirement briefs,
 
 ## 从需求到同版约定
 
-1. 每轮只问决定范围、工期或价格的关键项，最多四问。未答最多追问一次，用户跳过就采用合理约定，并在回复里说明。用户说“先出一版”或规划等待授权、超时，当轮给出说明书全文。报价、工时、总工期无系统值时写“系统核算中”。授权恢复后读取同一修订的工序与排期并补齐。
+1. 每轮只问决定范围、工期或价格的关键项，最多四问。未答最多追问一次，用户跳过就采用合理约定，并在回复里说明。用户说“先出一版”、等待生成或查询受限时，当轮交付六章初稿全文。优先用本次创建或修订回执的 saved_draft.chapters，保留用户原话。仅有会话原稿时据此整理六章。缺依据的价格、工时与工期标为待核实。
 2. 说明书按“需求背景与目标、做什么、不做什么、协作约定、工序总览、各工序明细”六章编写。每道列输入及来源、工作范围、交付物、验收标准、报价、工时与工期、前置工序。区分累计工作量和依赖路径上的工期。咨询仅给建议，修改时保留无关段落，只重算受影响的输入、输出、依赖、价格和工期。
-3. 用 `oprun_workspace_create` 保存完整说明书，用 `oprun_workspace_revise` 携带当前版本保存局部修改后的全文，再按新 revision 生成并评估。用 `oprun_workspace_read` 读取该版本的 specification、run_id 和实际工序。固定价方案拆解完成后，展示 commitment_draft 的项目范围、交付验收要求和承诺书条款，供企业在确认锁价前预览。发布页由企业逐道核对明确的固定承接价，缺价保留草案。
+3. 用 `oprun_workspace_create` 保存完整说明书，用 `oprun_workspace_revise` 携带当前版本保存局部修改后的全文，再按新 revision 生成并评估。保存生成回执的 workspace_id、revision、run_id 和原 request_key。按 poll_after_seconds 用 `oprun_workspace_run_status` 查询原任务；429 等满 Retry-After 再查同一任务，持续限流时延长间隔。401 交宿主刷新授权，403 核对主体和权限，503 暂停查询并保留上次已知状态。查询恢复后用 `oprun_workspace_read` 携带 workspace_id、run_id 读取同一任务。已有 specification 时交付六章、工序和 pricing；固定承接价待企业确认时明确写出。outcome_unknown 是终态，展示“本次核算结果待核实”、六章初稿与工作区链接，停止轮询。用户确认可能再次计费并要求重算后，才在同一修订使用新请求键，并将 confirmed_retry_of 设为原 run_id。固定价方案拆解完成后，展示 commitment_draft 的项目范围、交付验收要求和承诺书条款，供企业在确认锁价前预览。发布页由企业逐道核对明确的固定承接价，缺价保留草案。
 4. 用户明确要发布时，调用 `oprun_new_project_publish` 准备确认。请企业在返回的第一方网页确认准确预览，再用 `oprun_new_project_request_status` 查原回执。
 5. 用 `oprun_new_project_read` 查看已确认项目。同版的 `brief` 和 `graph` 共用成果、条款与交接标识。优先使用宿主支持的方案面板，或打开回执中的同版网页。按照服务返回的权限展示，保留范围版本和工序定位。
 
