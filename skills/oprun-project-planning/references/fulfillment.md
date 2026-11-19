@@ -6,6 +6,10 @@
 
 执行外部写入前检查工具清单、主体、业务关系及版本。需用户确认时交给返回的第一方页面。关闭页面、断线或未知结果时先查 `oprun_new_project_request_status` 和业务状态，找不到回执再用原输入与原 `request_key` 继续。需要修改提交内容时使用新键。版本冲突时重新读并按新的版本确认。
 
+## 保存接单技能
+
+用户明确要保存自报技能时，使用当前接单主体调用 `oprun_new_project_profile`。收到 `completed` 后用 `oprun_new_project_profile_read` 读取 `profile.matching_skills`，通过同一会话继续导入。管理员代导入库后，直接调用读工具获取该字段，无需再提交技能。遇到旧请求的 `awaiting_confirmation`，以原参数和 `request_key` 重试同一个工具。`requires_refresh` 时读取当前画像，再按用户需要提交。匹配证据授权可在画像页随时管理。
+
 ## 候选和议价
 
 - `oprun_new_project_candidates` 查看冻结工序的候选证据、覆盖和仍缺的条件。
