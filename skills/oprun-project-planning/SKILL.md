@@ -25,4 +25,4 @@ description: Use the independent OpRun project workspace for requirement briefs,
 
 工具与恢复方式见 [履约指引](references/fulfillment.md)。配置及升级见 [宿主接入](references/connection.md)。
 
-固定价项目先按[锁价、接单与签署](references/fixed-price.md)读取真实状态。
+固定价项目先按[锁价、接单与签署](references/fixed-price.md)读取真实状态。OPC 首页与智能找单用 `oprun_new_project_fixed_work`，企业和执行人查验收及待结算用 `oprun_new_project_fixed_settlement`。
