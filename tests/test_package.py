@@ -94,13 +94,16 @@ class SkillPackageTest(unittest.TestCase):
         server = config["mcpServers"]["oprun-new"]
         self.assertEqual(server["type"], "http")
         self.assertEqual(server["authMode"], "oauth")
-        self.assertEqual(server["url"], "https://oprun-new.example.invalid/mcp")
+        self.assertEqual(server["url"], "https://v2.agi.yifx.vip/mcp")
+        self.assertEqual(server["issuer"], "https://v2.agi.yifx.vip/mcp-oauth")
+        generic = json.loads((output / "mcp.json").read_text(encoding="utf-8"))
+        self.assertEqual(generic["mcpServers"], {"oprun-new": {"type": "http", "url": server["url"]}})
         self.assertEqual(server["scope"].split(), [
             "plan:read", "plan:propose", "plan:generate", "plan:publish",
             "match:read", "match:propose", "delivery:read", "delivery:submit",
             "quality:read", "quality:review", "acceptance:propose",
         ])
-        self.assertEqual(set(server), {"type", "url", "authMode", "scope"})
+        self.assertEqual(set(server), {"type", "url", "issuer", "authMode", "scope"})
         self.assertEqual(list(output.glob("*-mcp.json")), [output / "qveris-mcp.json"])
         with zipfile.ZipFile(output / "oprun-project-planning.zip") as archive:
             self.assertEqual(archive.read("oprun-project-planning/assets/qveris-mcp.json"),

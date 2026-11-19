@@ -2,7 +2,8 @@
   "mcpServers": {
     "oprun-new": {
       "type": "http",
-      "url": "https://oprun-new.example.invalid/mcp",
+      "url": "https://v2.agi.yifx.vip/mcp",
+      "issuer": "https://v2.agi.yifx.vip/mcp-oauth",
       "authMode": "oauth",
       "scope": "plan:read plan:propose plan:generate plan:publish match:read match:propose delivery:read delivery:submit quality:read quality:review acceptance:propose"
     }
