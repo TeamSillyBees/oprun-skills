@@ -1,6 +1,6 @@
 # 安装或更新 OpRun 新项目 Skill
 
-新版 Skill 使用独立的 OpRun 新项目 MCP。首次安装或从 1.5.0 升级前，向部署方取得新 MCP 地址和 OAuth issuer。新连接在宿主中命名为 `oprun-new`。
+新版 Skill 使用独立的 OpRun 新项目 MCP。正式环境的连接名为 `oprun-new`，MCP 地址为 `https://v2.agi.yifx.vip/mcp`，OAuth issuer 为 `https://v2.agi.yifx.vip/mcp-oauth`。已导入旧占位地址的用户可直接编辑这条连接并重新授权，无需重装 Skill。
 
 ## 先选择安装方式
 
@@ -27,12 +27,14 @@
 ## 命令安装与更新
 
 ```sh
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.0/oprun-skills.tgz install --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.0/oprun-skills.tgz update --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.0/oprun-skills.tgz doctor --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+OPRUN_NEW_MCP_URL=https://v2.agi.yifx.vip/mcp
+OPRUN_NEW_OAUTH_ISSUER=https://v2.agi.yifx.vip/mcp-oauth
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.1/oprun-skills.tgz install --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.1/oprun-skills.tgz update --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.1/oprun-skills.tgz doctor --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
 ```
 
-按当前宿主填写 `OPRUN_HOST`，可用值为 codex、claude、qveris、workbuddy、generic。地址变量填写部署方提供的公开地址。只有项目标记唯一时可省略 `--host` 自动识别；多个标记不猜测。默认项目范围：Codex 为 `.agents/skills/oprun-project-planning`，Claude Code 为 `.claude/skills/oprun-project-planning`。全局安装仅在用户要求时使用已公开的目录。
+按当前宿主填写 `OPRUN_HOST`，可用值为 codex、claude、qveris、workbuddy、generic。如果使用自建环境，将两个地址变量一起改为目标部署公布的值。只有项目标记唯一时可省略 `--host` 自动识别；多个标记不猜测。默认项目范围：Codex 为 `.agents/skills/oprun-project-planning`，Claude Code 为 `.claude/skills/oprun-project-planning`。全局安装仅在用户要求时使用已公开的目录。
 
 工具输出 `awaiting_host_import` 表示还没有完成安装，转入上面的 ZIP 流程。桌面宿主只在已公开支持目录时使用 `--target <完整Skill目录>`，目录名须为 `oprun-project-planning`。`npx` 首次可能要求确认下载包，遵循宿主提示。
 
@@ -45,7 +47,7 @@ npm 注册表不可用时，可使用同版本 GitHub 包：`npx https://github.
 ## 配置新连接并检查
 
 1. 在宿主中新建或选择 `oprun-new`。发单和接单使用同一份连接配置，两位用户分别登录，用自己的账号选择主体并授权。
-2. Qveris 使用[连接模板](skills/oprun-project-planning/assets/qveris-mcp.json)。把 `url` 中的占位地址替换为独立新 MCP 的 `/mcp` 地址。宿主需要显式 issuer 时，填写资源元数据公布的 `https://<新后端>/mcp-oauth`。使用只读授权时，仅申请 `plan:read match:read delivery:read quality:read`。其他宿主使用 Streamable HTTP、OAuth S256 PKCE 和受保护资源发现。更多配置见[共用新项目连接](skills/oprun-project-planning/references/connection.md)。
+2. Qveris 使用[连接模板](skills/oprun-project-planning/assets/qveris-mcp.json)。正式环境可直接导入。使用其他部署时，将模板中的 `url` 和 `issuer` 一起换成该部署的资源地址及其元数据公布的授权服务地址。使用只读授权时，仅申请 `plan:read match:read delivery:read quality:read`。其他宿主使用 Streamable HTTP、OAuth S256 PKCE 和受保护资源发现。更多配置见[共用新项目连接](skills/oprun-project-planning/references/connection.md)。
 3. 从 1.5.0 升级时在新会话显式选择 `oprun-new` 并重新授权。把原宿主连接留给使用原协议的会话。更换主体后重新授权并调用 `oprun_new_account_context` 核对。
 4. 在宿主刷新工具目录，检查连接中的 `oprun_new_account_context` 与 `oprun_new_project_read`。后者只用于用户指定且有权限的新项目。仅检查安装时调用账号上下文即可。密码、Cookie、Token 和授权回调参数由宿主管理。
 

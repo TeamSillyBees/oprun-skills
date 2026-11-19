@@ -2,7 +2,7 @@
   "mcpServers": {
     "oprun-new": {
       "type": "http",
-      "url": "https://oprun-new.example.invalid/mcp"
+      "url": "https://v2.agi.yifx.vip/mcp"
     }
   }
 }
