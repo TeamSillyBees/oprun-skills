@@ -27,9 +27,9 @@
 ## 命令安装与更新
 
 ```sh
-npx oprun-skills@2.0.0 install --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
-npx oprun-skills@2.0.0 update --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
-npx oprun-skills@2.0.0 doctor --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.0/oprun-skills.tgz install --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.0/oprun-skills.tgz update --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.0/oprun-skills.tgz doctor --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
 ```
 
 按当前宿主填写 `OPRUN_HOST`，可用值为 codex、claude、qveris、workbuddy、generic。地址变量填写部署方提供的公开地址。只有项目标记唯一时可省略 `--host` 自动识别；多个标记不猜测。默认项目范围：Codex 为 `.agents/skills/oprun-project-planning`，Claude Code 为 `.claude/skills/oprun-project-planning`。全局安装仅在用户要求时使用已公开的目录。
