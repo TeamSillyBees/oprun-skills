@@ -8,7 +8,7 @@
 
 支持写入 Skill 目录且运行 Node.js 22+ 的宿主可使用 npm/npx。Qveris、WorkBuddy 使用原生 ZIP 导入。从 1.5.0 升级后，在新会话选择 `oprun-new` 并重新授权。安装器会校验制品并为受管更新保存备份。新服务地址由部署方提供，仓库的配置使用占位地址。
 
-2.0.0 固定到已合入的 MCP 来源。目标环境完成新连接验证后发布制品。安装与升级步骤见[安装指引](INSTALL.md)。
+2.4.0 包含企业选定接单人和项目整体验收指引，来源固定到已合入的 MCP 提交。安装与升级步骤见[安装指引](INSTALL.md)。
 
 ## 维护发布
 
@@ -48,4 +48,4 @@ npm pack --ignore-scripts
 
 发布前核对 npm 包名的所有权、包内文件清单，以及 `bundle.json` 和 ZIP `manifest.json` 中的 `skill_files`、`revision` 完全一致。使用已审核的 `.tgz` 执行 `npm publish <包文件> --access public --ignore-scripts`；首次发布和 npm 的双重验证由维护者完成，不记录凭据。正式 ZIP 和 npm 必须来自同一提交。用 `python3 tools/package.py --output-dir dist/v<版本> --npm-tarball dist/npm-v<版本>/oprun-skills-<版本>.tgz` 生成联合 Release，逐文件验证后把 npm 包作为 `oprun-skills.tgz` 纳入清单。分别下载验证后才报告发布完成。npm 发布失败时不要宣称 npm 注册表已可用，原 ZIP 安装保持可用；也可在固定的 GitHub Release 下载同版本 npm 包。
 
-CLI 没有运行时依赖及安装钩子；`install` / `update` 仅在显式调用时写 Skill 目录。`doctor` 不读取 OAuth 凭据，不查询业务项目。npm 包不会在后台拉取新内容：更新使用 `npx oprun-skills@2.0.0 update`，需要固定版本时用 `@<版本>`。原 Python 安装器继续提供；两者兼容同一安装记录。
+CLI 没有运行时依赖及安装钩子；`install` / `update` 仅在显式调用时写 Skill 目录。`doctor` 不读取 OAuth 凭据，不查询业务项目。npm 包不会在后台拉取新内容：更新使用 `npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.4.0/oprun-skills.tgz update`，需要固定版本时用 `@<版本>`。原 Python 安装器继续提供；两者兼容同一安装记录。
