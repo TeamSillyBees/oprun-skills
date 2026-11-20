@@ -29,9 +29,9 @@
 ```sh
 OPRUN_NEW_MCP_URL=https://v2.agi.yifx.vip/mcp
 OPRUN_NEW_OAUTH_ISSUER=https://v2.agi.yifx.vip/mcp-oauth
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.6.1/oprun-skills.tgz install --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.6.1/oprun-skills.tgz update --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.6.1/oprun-skills.tgz doctor --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.6.2/oprun-skills.tgz install --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.6.2/oprun-skills.tgz update --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.6.2/oprun-skills.tgz doctor --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
 ```
 
 按当前宿主填写 `OPRUN_HOST`，可用值为 codex、claude、qveris、workbuddy、generic。如果使用自建环境，将两个地址变量一起改为目标部署公布的值。只有项目标记唯一时可省略 `--host` 自动识别；多个标记不猜测。默认项目范围：Codex 为 `.agents/skills/oprun-project-planning`，Claude Code 为 `.claude/skills/oprun-project-planning`。全局安装仅在用户要求时使用已公开的目录。
@@ -48,7 +48,7 @@ npm 注册表不可用时，可使用同版本 GitHub 包：`npx https://github.
 
 1. 在宿主中新建或选择 `oprun-new`。发单和接单使用同一份连接配置，两位用户分别登录，用自己的账号选择主体并授权。
 2. Qveris 使用[连接模板](skills/oprun-project-planning/assets/qveris-mcp.json)。正式环境可直接导入。使用其他部署时，将模板中的 `url` 和 `issuer` 一起换成该部署的资源地址及其元数据公布的授权服务地址。使用只读授权时，仅申请 `plan:read match:read delivery:read quality:read`。其他宿主使用 Streamable HTTP、OAuth S256 PKCE 和受保护资源发现。更多配置见[共用新项目连接](skills/oprun-project-planning/references/connection.md)。
-3. 从 1.5.0 升级时在新会话显式选择 `oprun-new` 并重新授权。把原宿主连接留给使用原协议的会话。更换主体后重新授权并调用 `oprun_new_account_context` 核对。
+3. 从 1.5.0 升级时在新会话显式选择 `oprun-new` 并重新授权。请在新项目会话中关闭原 `oprun` 连接，仅启用 `oprun-new`。仍有旧项目需要通过原协议操作时，在对应会话单独启用原连接。更换主体后重新授权并调用 `oprun_new_account_context` 核对。
 4. 在宿主刷新工具目录，检查连接中的 `oprun_new_account_context` 与 `oprun_new_project_read`。后者只用于用户指定且有权限的新项目。仅检查安装时调用账号上下文即可。密码、Cookie、Token 和授权回调参数由宿主管理。
 
 `doctor` 带两项公开地址时，验证资源、issuer、S256 和质检权限是否出现在 OAuth 发现元数据。公开发现、Skill 导入、OAuth 授权和工具调用各有独立状态。缺地址时输出 `awaiting_endpoint`；`--offline` 仅核对安装。完成授权并验证当前主体后，才报告连接可用。
