@@ -13,6 +13,7 @@
 ## 候选和议价
 
 - `oprun_new_project_candidates` 查看冻结工序的候选证据、覆盖和仍缺的条件。
+- 固定价工序查询成功且候选列表为空时，只展示回执的 `message`「等待 OPC 接单，接单后可确认签署。」发邀、接单、选定及签署权限仍以相应回执为准。
 - 企业通过 `oprun_new_project_invite` 准备正式邀请。受邀主体通过 `oprun_new_project_invitation_decide` 准备答复。发单主体可按服务端允许的动作撤回未成交邀请。
 - `oprun_new_project_quote` 提交本邀请内的价格与有效期，`oprun_new_project_agree` 由对方确认确切有效版本。按已确认回执判断实际执行人。
 
