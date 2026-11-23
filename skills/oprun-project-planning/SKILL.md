@@ -17,6 +17,8 @@ description: Use the independent OpRun project workspace for requirement briefs,
    - failed 或 outcome_unknown 均停止轮询，用 `oprun_workspace_read` 带原 workspace_id、run_id 取回六章初稿和链接。按 failure.message 说明原因，截断时说明可用更简洁的输出重算，校验未通过时指明需核对的条目。结果待核实时提示上次调用可能已计费。只有用户确认可能再次计费并要求重算，才在原修订用新请求键，把 confirmed_retry_of 设为该终态 run_id。
    - 用用户明确给出的项目名作 title。没有名称时从核心交付目标拟名，遇到 workspace_title_needs_confirmation 时请用户核对。发布前需要纠正名称时，打开工作区网页的「修改项目名称」，保存后重新读取承诺书和发布预览。
    - 已有 specification 时交付六章、工序和 pricing。已确认价按 currency 和整数分展示，例如 CNY 的 12345 分写为「人民币 123.45 元」。待锁价时显示「承接价待企业确认」。固定价方案拆解完成后，展示 commitment_draft 的项目范围、交付验收要求和承诺书条款，供企业在锁价前预览。企业在发布页逐道核对明确承接价，缺价保留草案。
+   - 首次成图或修订后成功生成新版图时，在解释工序依赖的句中使用 Markdown 行内链接，方括号内固定写「工序图」，紧接的圆括号内填入本次 `oprun_workspace_read` 回执的实际 `web_url`，核对 `workspace_id` 和 `focused_run_id` 与正在交付的运行一致。修订后用新版地址；即使省略 `auto_open`，也照常给出具名链接。尚无工序图时，只说明当前进度。
+   - 引用资料时，在引用处使用 Markdown 行内链接，方括号内写资料实际标题，紧接的圆括号内填该条检索结果的真实网址。同一段里的每篇资料分别使用自己的标题和地址。缺少可核实的标题或网页地址时，用普通文本说明依据；内部 `source_ref`（如 `redacted:…`）只作标识。正文直接输出 Markdown 链接，不用代码块包裹，也不在段尾重复列出裸网址。
 4. 用户明确要发布时，调用 `oprun_new_project_publish` 准备确认。请企业在返回的第一方网页确认准确预览，再用 `oprun_new_project_request_status` 查原回执。
 5. 用 `oprun_new_project_read` 查看已确认项目。同版的 `brief` 和 `graph` 共用成果、条款与交接标识。优先使用宿主支持的方案面板，或打开回执中的同版网页。按照服务返回的权限展示，保留范围版本和工序定位。
 
