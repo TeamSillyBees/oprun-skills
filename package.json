@@ -1,6 +1,6 @@
 {
   "name": "oprun-skills",
-  "version": "2.6.3",
+  "version": "2.7.0",
   "description": "Install, update and check the OpRun project Skill for the independent MCP service",
   "type": "module",
   "bin": {

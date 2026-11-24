@@ -10,6 +10,12 @@
 
 查看固定价、工期及实际交付要求后，OPC 用 `oprun_new_project_fixed_accept` 发起第一方本人确认。成功后说明“已接单，等待企业选定”。每名 OPC 可同时保有多笔接单记录，多名 OPC 可以接同一道工序。用 applied 查询本人的接单记录，用 assigned 查询企业已选定的任务。未选中时给出本人的最新回执。
 
+要查看合作邀请时，用同一工具的 pending 分页读取当前主体收到的待决定邀请。没有待决定的合作邀请时，pending 显示首位自动推荐。
+
+## 企业手动邀请合作 OPC
+
+企业指定接单方时，用 `oprun_new_project_fixed_invite_partners` 读取该工序可邀请的本企业 OPC 合作资源，按返回的 profile_id 核对人选。用 `oprun_new_project_fixed_invite_partner` 携带该工序的 step_id、expected_version、scope_digest、profile_id 和 request_key，准备沿用冻结价的邀请。发单方本人完成确认后回读回执。接单方可以在待决定列表处理邀请，提交意向后由企业选定。
+
 ## 企业选人和签署
 
 企业用 `oprun_new_project_read` 读取每道工序的 fixed.applications。用户指定已接单的候选人后，用 `oprun_new_project_fixed_select` 携带该工序的 invitation_id、expected_version、scope_digest 和 price_digest，核对后由企业在第一方页面确认。只有该工序其他接单记录转为未选中。每道工序均已选定执行人后，核对合同与说明书，再由企业本人签署。新签约流程以 signature.initial_steps 显示签署时可以开工的全部工序；早期冻结合同按 first_step 显示。后续工序等前置验收、所需交接及外部输入核验就绪后开工。
