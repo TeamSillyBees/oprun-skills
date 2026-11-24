@@ -12,17 +12,19 @@
 
 ## 维护发布
 
-Skill 内容的唯一来源是 oprun-mcp 仓库的 `skills/oprun-project-planning`，与服务端协议同仓维护，并由 OpRun MCP 以资源形式提供。**不要直接修改本仓库的 `skills/`**；修改先合入 oprun-mcp `main`，再同步到这里。本仓库只维护安装说明、通用连接示例、安装器、同步和打包工具。
+Skill 内容的唯一来源是 oprun-v2 仓库的 `mcp/skills/oprun-project-planning`，与服务端协议同仓维护，并由 OpRun MCP 以资源形式提供。**不要直接修改本仓库的 `skills/`**；修改先合入 oprun-v2 `main`，再同步到这里。本仓库只维护安装说明、通用连接示例、安装器、同步和打包工具。
 
-1. 在 oprun-mcp 本地克隆中拉取最新 `main`，然后在本仓库运行（默认 `origin/main`，拒绝未合入 main 的提交）：
+2.6.3 及更早的版本来自 oprun-mcp。那个仓库已经带着完整历史并入 oprun-v2，不再接收改动，所以不要再从它同步：脚本会拒绝。这些版本在 `release.json` 里记录的来源提交在 oprun-v2 里同样存在，`--check` 照常能核对。
+
+1. 在 oprun-v2 本地克隆中拉取最新 `main`，然后在本仓库运行（默认 `origin/main`，拒绝未合入 main 的提交）：
 
    ```sh
-   python3 tools/sync.py --oprun-mcp ../oprun-mcp
+   python3 tools/sync.py --source ../oprun-v2
    ```
 
-   脚本按来源提交完整替换 `skills/oprun-project-planning/`，删除上游已移除的文件，并把来源提交写入 `release.json` 的 `mcp_revision`。核对差异后更新 `version`。
+   脚本按来源提交完整替换 `skills/oprun-project-planning/`，删除上游已移除的文件，并把来源提交写入 `release.json` 的 `mcp_revision`，来源仓库写入 `source_repository`。核对差异后更新 `version`。
 
-2. 运行 `python3 -m unittest discover -s tests` 和 `python3 tools/sync.py --oprun-mcp ../oprun-mcp --check`，确认 `skills/` 与记录的来源提交完全一致。
+2. 运行 `python3 -m unittest discover -s tests` 和 `python3 tools/sync.py --source ../oprun-v2 --check`，确认 `skills/` 与记录的来源提交完全一致。
 
 3. 提交并推送后打包。独立 INSTALL.md 链接到该提交，未推送时脚本拒绝打包；仅本地试打包可加 `--allow-unpushed`：
 
@@ -34,7 +36,7 @@ MCP 来源待合入时，用 `tools/sync.py --ref <完整提交> --allow-unmerge
 
 输出可复现的 ZIP、安装指南、安装工具 `install.py`、通用及各宿主 MCP 配置（Skill 中的 `assets/qveris-mcp.json`）、`manifest.json` 与 `SHA256SUMS`。ZIP 即同步来的完整 Skill 目录；清单的 `skill_files` 列出每个成员的校验值，`mcp_revision` 是 Skill 来源提交，不代表线上当前版本。为新版本使用新的输出目录和版本标签；源码更新与 Release 发布分开执行，不覆盖旧资产。
 
-Skill 的唯一维护源在 [oprun-mcp](https://github.com/TeamSillyBees/oprun-mcp)。
+Skill 的唯一维护源在 [oprun-v2](https://github.com/TeamSillyBees/oprun-v2) 的 `mcp/skills/`。
 
 ## npm 发布
 

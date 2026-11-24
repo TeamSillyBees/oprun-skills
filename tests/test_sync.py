@@ -53,8 +53,8 @@ class SkillSyncTest(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(text.encode())
 
-    def run_sync(self, *args):
-        with patch.object(sync, "ROOT", self.dist), patch("sys.argv", ["sync.py", "--oprun-mcp", str(self.oprun), *args]), \
+    def run_sync(self, *args, source=None, flag="--source"):
+        with patch.object(sync, "ROOT", self.dist), patch("sys.argv", ["sync.py", flag, str(source or self.oprun), *args]), \
                 contextlib.redirect_stdout(io.StringIO()):
             sync.main()
 
@@ -68,8 +68,32 @@ class SkillSyncTest(unittest.TestCase):
                                         "references/guide.md": b"Synthetic guide\n"})
         self.assertFalse((self.dist / "skills/oprun-project-planning/references/old.md").exists())
         release = json.loads((self.dist / "release.json").read_text(encoding="utf-8"))
-        self.assertEqual(release, {"version": "1.0.0", "mcp_revision": self.main, "source_repository": "TeamSillyBees/oprun-mcp", "source_merge_status": "merged"})
+        self.assertEqual(release, {"version": "1.0.0", "mcp_revision": self.main, "source_repository": "TeamSillyBees/oprun-v2", "source_merge_status": "merged"})
         self.run_sync("--check")
+
+    def test_release_recorded_before_the_source_moved_still_checks_but_cannot_be_synced_from(self):
+        # Releases up to 2.6.3 record oprun-mcp commits, where the Skill sat at the repository root.
+        former = self.dist.parent / "former"
+        self.write(former / sync.FORMER_SOURCE_DIR / "SKILL.md", "# Before the merge\n")
+        git(former, "init", "--quiet")
+        git(former, "add", ".")
+        git(former, *COMMIT, "-m", "Synthetic oprun-mcp main")
+        git(former, "update-ref", "refs/remotes/origin/main", "HEAD")
+        recorded = git(former, "rev-parse", "HEAD")
+        self.write(self.dist / "release.json", json.dumps({"version": "1.0.0", "mcp_revision": recorded}) + "\n")
+        self.write(self.dist / "skills/oprun-project-planning/SKILL.md", "# Before the merge\n")
+        (self.dist / "skills/oprun-project-planning/references/old.md").unlink()
+        self.run_sync("--check", source=former)
+        # The frozen repository must not be copied from again: its Skill no longer receives changes.
+        with self.assertRaises(SystemExit) as refused:
+            self.run_sync(source=former)
+        self.assertIn("TeamSillyBees/oprun-v2", str(refused.exception))
+        self.assertEqual(json.loads((self.dist / "release.json").read_text(encoding="utf-8"))["mcp_revision"], recorded)
+        # The former flag name leads to the same answer rather than to an argument error.
+        with self.assertRaises(SystemExit) as renamed:
+            self.run_sync(source=former, flag="--oprun-mcp")
+        self.assertIn("TeamSillyBees/oprun-v2", str(renamed.exception))
+        self.run_sync(flag="--oprun-mcp")
 
     def test_check_reports_hand_edits_and_extra_files(self):
         self.run_sync()
