@@ -2,7 +2,7 @@
 """Distribute the reviewed Skill from a fixed commit of the repository that owns it.
 
 The Skill source lives in TeamSillyBees/oprun-v2 under mcp/skills/; this repository is a verified mirror.
-Releases up to 2.6.3 were cut from TeamSillyBees/oprun-mcp. That repository was merged into oprun-v2 with
+Releases 1.2.0 to 2.6.3 were cut from TeamSillyBees/oprun-mcp. That repository was merged into oprun-v2 with
 its history, so the commits those releases record exist in oprun-v2 as well, with the Skill at its old path.
 """
 
@@ -13,11 +13,16 @@ import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
+# Where a maintainer gets the Skill from today.
 SOURCE_REPOSITORY = "TeamSillyBees/oprun-v2"
 SOURCE_DIR = "mcp/skills/oprun-project-planning"
 # Where the Skill sat in oprun-mcp before the merge. Only --check reads it, for releases recorded back then.
 FORMER_SOURCE_DIR = "skills/oprun-project-planning"
 TARGET_DIR = "skills/oprun-project-planning"
+# The identifier written to release.json and from there into the published manifests. It stays what it has
+# been: the MCP server's integration manifest publishes the same value (mcp/tools/generate.py in oprun-v2),
+# and INSTALL.md names it. Change it only together with those, as a deliberate release.
+PUBLISHED_SOURCE = "TeamSillyBees/oprun-mcp"
 
 
 def run(cwd, *args, binary=False):
@@ -39,6 +44,12 @@ def source_tree(source, commit, directory=SOURCE_DIR):
     return entries
 
 
+def exists(source, commit, path):
+    """Whether the commit has anything at path, whatever kind of entry it is."""
+    return subprocess.run(["git", "cat-file", "-e", f"{commit}:{path}"], cwd=source,
+                          stderr=subprocess.DEVNULL).returncode == 0
+
+
 def local_files(target):
     return {p.relative_to(target).as_posix(): p for p in target.rglob("*") if p.is_file()} if target.is_dir() else {}
 
@@ -57,35 +68,44 @@ def drift(target, entries):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    # --oprun-mcp is the former name of --source. It still parses, so an old command line reaches the check
-    # below and is told where the Skill lives now, instead of copying from the frozen repository.
-    parser.add_argument("--source", "--oprun-mcp", type=Path, required=True, dest="source",
-                        help=f"local clone of {SOURCE_REPOSITORY}")
+    parser.add_argument("--source", type=Path, dest="source", help=f"local clone of {SOURCE_REPOSITORY}")
+    # The former name of --source. It still parses, so an old command line reaches the checks below and is
+    # told where the Skill lives now, instead of stopping at an argument error.
+    parser.add_argument("--oprun-mcp", type=Path, dest="source", help=argparse.SUPPRESS)
     parser.add_argument("--ref", default="origin/main", help="source commit to copy (default: origin/main)")
     parser.add_argument("--check", action="store_true",
                         help="verify skills/ equals the commit recorded in release.json; change nothing")
     parser.add_argument("--allow-unmerged", action="store_true",
                         help="permit a commit not on the source's origin/main (local trials only, never release)")
     args = parser.parse_args()
+    if args.source is None:
+        parser.error("--source is required")
     release_path = ROOT / "release.json"
     release = json.loads(release_path.read_text(encoding="utf-8"))
     target = ROOT / TARGET_DIR
 
     ref = release["mcp_revision"] if args.check else args.ref
-    commit = run(args.source, "rev-parse", "--verify", f"{ref}^{{commit}}").strip()
+    try:
+        commit = run(args.source, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}").strip()
+    except subprocess.CalledProcessError:
+        raise SystemExit(f"{ref} is not a commit in {args.source}. Fetch that clone, "
+                         f"or pass an up-to-date clone of {SOURCE_REPOSITORY} with --source.")
     entries = source_tree(args.source, commit)
-    if not entries and args.check:
-        # A release recorded before the repositories were merged: the Skill sat at the root of oprun-mcp.
+    # A release recorded before the repositories were merged: the Skill sat at the root of oprun-mcp.
+    # Only when the commit has nothing at all at today's path, so a broken tree there is never papered over.
+    former = args.check and not exists(args.source, commit, SOURCE_DIR)
+    if former:
         entries = source_tree(args.source, commit, FORMER_SOURCE_DIR)
     if "SKILL.md" not in entries:
-        raise SystemExit(f"{SOURCE_DIR}/SKILL.md is missing at {commit}. The Skill is maintained in "
-                         f"{SOURCE_REPOSITORY}; pass a clone of that repository with --source.")
+        raise SystemExit(f"{SOURCE_DIR}/SKILL.md is missing at {commit}. The Skill is maintained in {SOURCE_REPOSITORY} "
+                         f"under {SOURCE_DIR}: pass an up-to-date clone of that repository with --source, "
+                         "and a commit made after the Skill moved there.")
     if args.check:
         problems = drift(target, entries)
         if problems:
             raise SystemExit(f"{TARGET_DIR} differs from source commit {commit}:\n  " + "\n  ".join(problems)
                              + "\nRun tools/sync.py instead of editing skills/ directly.")
-        print(f"{TARGET_DIR} matches source commit {commit}")
+        print(f"{TARGET_DIR} matches {FORMER_SOURCE_DIR if former else SOURCE_DIR} at source commit {commit}")
         return
 
     merged = subprocess.run(["git", "merge-base", "--is-ancestor", commit, "origin/main"], cwd=args.source)
@@ -105,7 +125,7 @@ def main():
 
     release.pop("oprun_revision", None)
     release["mcp_revision"] = commit
-    release["source_repository"] = SOURCE_REPOSITORY
+    release["source_repository"] = PUBLISHED_SOURCE
     release["source_merge_status"] = "merged" if merged.returncode == 0 else "pending"
     release_path.write_bytes((json.dumps(release, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
     print(f"Synced {len(entries)} files from {SOURCE_REPOSITORY} {commit}; review the diff, then bump release.json version")
