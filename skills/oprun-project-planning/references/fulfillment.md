@@ -4,6 +4,8 @@
 
 企业和接单者用 `oprun_new_project_inbox` 查本人项目，再用 `oprun_new_project_read` 读取项目、范围版本和工序。视图只读。刷新与深链恢复时保留当前范围版本。使用网页回退时让用户完成登录，并核对网页显示的主体和版本。
 
+工具返回错误时按 recovery 处理。`subject_mismatch` 配 `omit_subject_id`：传入的 subject_id 不是当前授权主体，去掉它重试。`subject_forbidden` 配 `check_target_ids`：连接没有问题，是调用里的项目、工序或回执编号对当前主体不可见，从本人的列表重新取编号。`subject_forbidden` 配 `check_authorization`：当前主体的角色或授权做不了这件事。`unknown_tool`：工具名不在当前主体的清单里，按 did_you_mean 改用列出的名称，或读 `oprun_new_account_context` 的工具索引。
+
 执行外部写入前检查工具清单、主体、业务关系及版本。需用户确认时交给返回的第一方页面。关闭页面、断线或未知结果时先查 `oprun_new_project_request_status` 和业务状态，找不到回执再用原输入与原 `request_key` 继续。需要修改提交内容时使用新键。版本冲突时重新读并按新的版本确认。
 
 ## 保存接单技能
