@@ -5,7 +5,7 @@ description: Use the independent OpRun project workspace for requirement briefs,
 
 # OpRun 新项目
 
-发单助手与接单助手共用同一个 `oprun-new` MCP 配置。用户通过宿主的 OAuth 登录并选择本人主体。需要核对主体、切换授权或排查权限时，用 `oprun_new_account_context` 查看当前连接；它同时返回按用途分组的工具索引，不确定该用哪个工具时先看它。一个连接只代表一个主体，所有工具的 subject_id 都可省略。首次生成方案可直接创建工作区。需求、报价、交付和验收由这个连接对应的新工作台办理。
+发单助手与接单助手共用同一个 `oprun-new` MCP 配置。用户通过宿主 OAuth 登录并选择本人主体。调用业务工具前先查当前连接的工具清单（宿主的 `list_mcp_tools` 或 MCP `tools/list`），按实际名称和输入契约调用。用清单中发现的 `oprun_new_account_context` 核对主体及授权工具索引。一个连接只代表一个主体，所有工具的 subject_id 都可省略。首次生成方案可直接创建工作区。需求、报价、交付和验收由这个连接对应的新工作台办理。
 
 ## 从需求到同版约定
 
@@ -28,10 +28,10 @@ description: Use the independent OpRun project workspace for requirement briefs,
 - 固定价工序按企业锁价本人承接。历史议价工序按已冻结范围和本人交付证据匹配候选，核对授权、本人贡献、覆盖与缺口，分别展示待报价、待回复、档期冲突和正式报价。用本人主体查邀请，表达意向并在范围内议价。正式邀请、回函和唯一执行人分别以新后端回执为准。报价过期、退出或出现冲突时，留在原卡重新核对当前可用候选。
 - 用户要联系 OPC 时，用当前主体的 `oprun_new_project_read` 回执中的 chat_url 打开项目群。要查看所有群时用 `oprun_new_project_chat_rooms` 按 next 翻页。仅发单方和已接单执行人能参加。实际发言由用户在第一方页面完成。
 - 工序有 latest_milestone 时标明“阶段交付”，根据正式交付、质检、验收和交接回执说明负责人及下一步。阶段成果只更新进度，群内文字仅作沟通。正式提交走工序入口。
-- 执行人提交确切版本的成果，带 `asset_id` 和当前工序版本，收到可查回执后方可报告已交付。按同版条款查看质检、补齐材料并在必要时申请复核。企业在第一方页面确认逐条验收，退回时引用具体成果、条款和理由。
-- 说明一道工序的进度时，照抄回执中的 `step_status.label`，并按 `action_owner` 说明在等谁。只有 `self` 是当前用户的待办，其余写成等待对方或等待前置条件。列表、详情、收件箱和结算里，同一道工序的 `step_status` 相同。列表为空时按 `empty.reason` 说明原因。
-- 回答里用到的结论来自失败后重试的调用时，说明哪次调用失败过、失败是否影响结论。
+- 正式交付按[接单方正式交付](references/fulfillment.md#接单方正式交付)读取表单，按需预检和核实项目附件，原样预检提交参数，请用户明确确认，提交后回读。企业在第一方页面确认逐条验收，退回时引用具体成果、条款和理由。
+- 展示状态使用回执里的 `step_status.label` 等对应显示字段。按显式的 `waiting_on` 或现有回执的 `action_owner` 说明在等谁，两者都缺失时标明待核实。只有明确归于本人的动作才列为本人待办。当前能否操作看业务回执的可用动作、交付资格和拦截原因。列表为空时按 `empty.reason` 说明原因。
+- 接单查询、权限异常及交付核对按「已验证事实／推断／待核实」组织回答。给出查询口径、已核对页数、失败及恢复事实。金额按回执币种从分换算并复核。声称已打开页面、已展示表单、已交付或已到账前，核对对应证据。
 
-工具与恢复方式见 [履约指引](references/fulfillment.md)。配置及升级见 [宿主接入](references/connection.md)。
+工具与恢复方式、[交付表单验收](references/fulfillment.md#交付表单验收)和[交付验收与结算核对](references/fulfillment.md#交付验收与结算核对)见履约指引。配置及升级见 [宿主接入](references/connection.md)。
 
 固定价项目先按[锁价、接单与签署](references/fixed-price.md)读取真实状态。OPC 首页与智能找单用 `oprun_new_project_fixed_work`，企业和执行人查验收及待结算用 `oprun_new_project_fixed_settlement`。
