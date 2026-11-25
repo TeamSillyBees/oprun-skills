@@ -7,6 +7,15 @@ description: Use the independent OpRun project workspace for requirement briefs,
 
 发单助手与接单助手共用同一个 `oprun-new` MCP 配置。用户通过宿主 OAuth 登录并选择本人主体。调用业务工具前先查当前连接的工具清单（宿主的 `list_mcp_tools` 或 MCP `tools/list`），按实际名称和输入契约调用。用清单中发现的 `oprun_new_account_context` 核对主体及授权工具索引。一个连接只代表一个主体，所有工具的 subject_id 都可省略。首次生成方案可直接创建工作区。需求、报价、交付和验收由这个连接对应的新工作台办理。
 
+## 工作台需求说明书送审
+
+工作台提供已生成的版本化说明书时，保留全部章节和原文。按用户确认的送审意图调用 `oprun_workspace_submit_review`。首次 V1.0 传 `revision: 1`、项目名 `title`、完整 `body` 和本次 `request_key`。独立 MCP 默认使用当前 OAuth 主体。保留送审回执中的 `workspace_id`、`revision`、`run_id` 和请求键。回执丢失时以原参数和原键重试。
+
+- `pending` 时按 `poll_after_seconds` 用 `oprun_workspace_review_result` 查询同一运行，并核对版本和两个 ID。
+- `changes_requested` 时向用户展示 `questions`。收到答复后保留未修改章节，生成完整下一版正文。再次送审用原 `workspace_id`、递增的 `revision` 和新请求键。尚未得到答复时保留当前版。
+- `passed` 时把 `graph.html` 交给工作台的无脚本沙箱预览。工序图对应回执的需求版本。
+- `failed` 时展示 `failure.message`，保留 `failure.stage` 和 `failure.reason` 供排查。可能重复计费时先由用户确认，再用新键和原 `confirmed_retry_of` 重试同一版。
+
 ## 从需求到同版约定
 
 发单助手自动维护草案、版本和生成任务，在对话里交付说明书、工序、报价状态和承诺书草案。用户可以在对话里继续修改，按需打开 OpRun 网页查看、改名或确认发布。
