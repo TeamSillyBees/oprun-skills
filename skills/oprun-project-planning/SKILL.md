@@ -12,8 +12,9 @@ description: Use the independent OpRun project workspace for requirement briefs,
 工作台提供已生成的版本化说明书时，保留全部章节和原文。按用户确认的送审意图调用 `oprun_workspace_submit_review`。首次 V1.0 传 `revision: 1`、项目名 `title`、完整 `body` 和本次 `request_key`。独立 MCP 默认使用当前 OAuth 主体。保留送审回执中的 `workspace_id`、`revision`、`run_id` 和请求键。回执丢失时以原参数和原键重试。
 
 - `pending` 时按 `poll_after_seconds` 用 `oprun_workspace_review_result` 查询同一运行，并核对版本和两个 ID。
-- `changes_requested` 时向用户展示 `questions`。收到答复后保留未修改章节，生成完整下一版正文。再次送审用原 `workspace_id`、递增的 `revision` 和新请求键。尚未得到答复时保留当前版。
-- `passed` 时把 `graph.html` 交给工作台的无脚本沙箱预览。工序图对应回执的需求版本。
+- `changes_requested` 时先向用户展示 `questions`，按 `stage` 说明影响方案、开工还是 OPC 匹配。收到答复后保留未修改章节，生成完整下一版正文。再次送审用原 `workspace_id`、递增的 `revision` 和新请求键。尚未得到答复时保留当前版。
+- `review_comments` 是不阻塞的评审意见（`review`）、待定问题（`open_question`）和云端采用的约定（`assumption`），按 `targets` 标出涉及的工序或成果。需修改和通过时都可能出现。和问题分开列出，说明不回答也不影响通过；用户采纳的写进下一版正文，不同意某项约定时在正文里写明。
+- `passed` 时把 `graph.html` 交给工作台的无脚本沙箱预览，同时列出 `review_comments`。工序图对应回执的需求版本，保留 `plan_ref` 用于核对版本。
 - `failed` 时展示 `failure.message`，保留 `failure.stage` 和 `failure.reason` 供排查。可能重复计费时先由用户确认，再用新键和原 `confirmed_retry_of` 重试同一版。
 
 ## 从需求到同版约定
