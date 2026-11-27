@@ -29,9 +29,9 @@
 ```sh
 OPRUN_NEW_MCP_URL=https://v2.agi.yifx.vip/mcp
 OPRUN_NEW_OAUTH_ISSUER=https://v2.agi.yifx.vip/mcp-oauth
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.12.0/oprun-skills.tgz install --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.12.0/oprun-skills.tgz update --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
-npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.12.0/oprun-skills.tgz doctor --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.13.0/oprun-skills.tgz install --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.13.0/oprun-skills.tgz update --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
+npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.13.0/oprun-skills.tgz doctor --host "$OPRUN_HOST" --mcp-url "$OPRUN_NEW_MCP_URL" --oauth-issuer "$OPRUN_NEW_OAUTH_ISSUER"
 ```
 
 按当前宿主填写 `OPRUN_HOST`，可用值为 codex、claude、qveris、workbuddy、generic。如果使用自建环境，将两个地址变量一起改为目标部署公布的值。只有项目标记唯一时可省略 `--host` 自动识别；多个标记不猜测。默认项目范围：Codex 为 `.agents/skills/oprun-project-planning`，Claude Code 为 `.claude/skills/oprun-project-planning`。全局安装仅在用户要求时使用已公开的目录。
