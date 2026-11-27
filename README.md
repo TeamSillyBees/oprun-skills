@@ -8,7 +8,7 @@
 
 支持写入 Skill 目录且运行 Node.js 22+ 的宿主可使用 npm/npx。Qveris、WorkBuddy 使用原生 ZIP 导入。从 1.5.0 升级后，在新会话选择 `oprun-new` 并重新授权。安装器会校验制品并为受管更新保存备份。正式环境的 MCP 地址为 `https://v2.agi.yifx.vip/mcp`，OAuth issuer 为 `https://v2.agi.yifx.vip/mcp-oauth`。
 
-2.13.0 同步了 oprun-v2 里 Skill 的改动：明确接单助手交付规则；统一 MCP 项目列表契约并修复交付工作区降级。安装与升级步骤见[安装指引](INSTALL.md)。
+2.14.0 同步了 oprun-v2 里 Skill 的改动：项目列表接上统一状态：修复列表与详情不一致，新增 detail 详略档和网页登录信息。安装与升级步骤见[安装指引](INSTALL.md)。
 
 ## 维护发布
 
@@ -56,4 +56,4 @@ npm pack --ignore-scripts
 
 首次启用时，npm 包维护者在 `oprun-skills` 的 Settings → Trusted publishing 选择 GitHub Actions，填写组织 `TeamSillyBees`、仓库 `oprun-skills`、工作流文件名 `publish-npm.yml`。环境名留空，启用直接执行 `npm publish`。在下一版就绪后绑定，npm 要求两天内首次发布成功。
 
-CLI 没有运行时依赖及安装钩子；`install` / `update` 仅在显式调用时写 Skill 目录。`doctor` 不读取 OAuth 凭据，不查询业务项目。手动更新可运行 `npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.13.0/oprun-skills.tgz update`。原 Python 安装器继续提供；两者兼容同一安装记录。
+CLI 没有运行时依赖及安装钩子；`install` / `update` 仅在显式调用时写 Skill 目录。`doctor` 不读取 OAuth 凭据，不查询业务项目。手动更新可运行 `npx https://github.com/TeamSillyBees/oprun-skills/releases/download/v2.14.0/oprun-skills.tgz update`。原 Python 安装器继续提供；两者兼容同一安装记录。
