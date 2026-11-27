@@ -1,9 +1,9 @@
 {
-  "version": "2.13.0",
+  "version": "2.14.0",
   "repository": "TeamSillyBees/oprun-skills",
   "skill": "oprun-project-planning",
   "grant_version": 3,
-  "mcp_revision": "563b238d93c460c8ec90a944bfe0a6313cb054fa",
+  "mcp_revision": "5f7a0adef36c7953f93eaecb6e891812f722dd83",
   "source_repository": "TeamSillyBees/oprun-mcp",
   "source_merge_status": "merged"
 }

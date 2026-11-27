@@ -33,11 +33,11 @@
 ## OPC 接单查询
 
 1. 用 `oprun_new_account_context` 核对当前角色、主体及授权范围，按已核实的连接说明正式或测试环境。主体编号以 `subject_id` 或 `resolved_subject_id` 回执为准，业务调用默认省略 `subject_id`。`profile_id` 标识画像。连接或环境无法核实的部分标待核实。
-2. 用 `oprun_new_project_list_v2` 的 `search` 按编号、可见标题或本人承接的工序名查询。结果有歧义时让用户选定，保持原查询范围。选定后用完整 `project_id` 和对应 `step_id` 读详情。有读取权限的受邀主体可见真实项目标题；project_no 为空时省略业务编号。
+2. 用 `oprun_new_project_list_v2` 的 `search` 按编号、可见标题或本人承接的工序名查询。结果有歧义时让用户选定，保持原查询范围。列总览时传 `detail=summary`，每个项目只回状态、等待方、总额和当前工序；要逐道工序的 `step_id` 时传 `detail=steps` 或读详情。选定后用完整 `project_id` 和对应 `step_id` 读详情。有读取权限的受邀主体可见真实项目标题；project_no 为空时省略业务编号。
 3. 工序、项目和结算各用同层级显示状态，例如 `step_status.label`、`project_status.label` 或结算的 `status_label`。宿主提供 `display_status` 或 `status` 时按对应层级引用。核对具体工序进度时，用同一工序、同版详情的 `state`、`started`、`delivery_version` 和 `next_action` 交叉检查，标出缺失或不一致之处。只有显式的 `waiting_on` 或 `action_owner` 能说明当前在等谁。等待企业选定或签署时说明等待主体和本人可做的事。
 4. 动作资格取当前工序回执的显式可用动作（若有 `available_actions`）。交付资格先看 `can_deliver`、`deliver_blockers` 和警告，再按正式交付流程核对本次提交。工具清单只说明当前连接有哪些工具。说明时间时分别给出排期窗口、预估工时、实际开工时间。已知时间统一标注北京时间（UTC+08:00）。实际时间取对应事件，预估时长和状态字段只作各自用途。
 5. 回答前复核币种和分转元、项目去重口径、已读取范围和失败事实。列表用 `next_project` 续传 `after_project`，全部读完才汇总全量。`fixed_work` 的 `view=assigned` 表示已选定本人，查询进行中的数量时还需按工序显示状态筛选。若本轮仅查询，在回复里注明只读。
-6. 给出第一方记录链接时标注是否需要登录、是否已打开核对。收到页面正文或宿主成功渲染回执后，才能报告已打开。仅返回 `view_url`、`chat_url` 或附件链接时，注明入口未验证。卡片失败时如实给出回执诊断和实际返回的同项目回退链接。
+6. 给出第一方记录链接时标注是否需要登录、是否已打开核对。收到页面正文或宿主成功渲染回执后，才能报告已打开。仅返回 `view_url`、`chat_url` 或附件链接时，注明入口未验证。回执的 `web_access` 给出链接所在站点、登录入口和说明，`environment` 为 `integration` 时是联调站点，要用联调账号登录。卡片失败时如实给出回执诊断和实际返回的同项目回退链接。
 
 ## 阶段成果的两个入口
 
